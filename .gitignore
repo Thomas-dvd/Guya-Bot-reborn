@@ -1,0 +1,7 @@
+.env
+database.db
+config.json
+devconfig.json
+
+.idea/
+__pycache__/
