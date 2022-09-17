@@ -144,11 +144,11 @@ class Rank(commands.Cog):
             if maison:
                 text += "__Maison :__ ✅\n"
             else:
-                text += f"__Maison :__ ❌ Tu doit encore finir ta maison de membre et la faire validé, pour plus d'information, consulte le #build. [?]({config['links_doc']['maison_2']})\n"
+                text += f"__Maison :__ ❌ Tu doit encore finir ta maison de membre. [?]({config['links_doc']['maison_2']})\n"
             if double_compte:
                 text += "__Double compte :__ ✅\n"
             else:
-                text += f"__Double compte :__ ❌ Tu doit mettre un double compte dans le trinité-et-tobago, contacte le leader les officiers du trinité-et-tobago pour te faire invité. [?]({config['links_doc']['double_compte']})\n"
+                text += f"__Double compte :__ ❌ Tu doit mettre un DC dans le trinité-et-tobago, contacte les officiers pour te faire invité. [?]({config['links_doc']['double_compte']})\n"
             if time:
                 text += "__Ancienneté :__ ✅\n"
             else:
@@ -185,7 +185,7 @@ class Rank(commands.Cog):
             if animation:
                 text += "__Participation a une animation :__ ✅\n"
             else:
-                text += f"__Participation a une animation :__ ❌ Tu doit participer a une animation (n'oublie pas de demander au animateur de noté ta participation\n"
+                text += f"__Participation a une animation :__ ❌ Tu doit participer a une animation (demander aux animateur de noté ta participation)\n"
 
             text += f"\n**Récompense de rank :** Jump boots (immunise contre les dégâts de chute et permet des sauts de 5 blocs)"
 
