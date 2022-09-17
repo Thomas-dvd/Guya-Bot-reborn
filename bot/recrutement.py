@@ -72,8 +72,11 @@ class Recrutement(commands.Cog):
         self.bot.db.commit()
         cur.close()
 
-        await member_principal_guild.edit(nick=f"Recrue | {data[1]}")
-        await member_secondary_guild.edit(nick=f"Recrue | {data[1]}")
+        try:
+            await member_principal_guild.edit(nick=f"Recrue | {data[1]}")
+            await member_secondary_guild.edit(nick=f"Recrue | {data[1]}")
+        except discord.errors.Forbidden:
+            pass
 
         await member_secondary_guild.remove_roles(secondary_guild.get_role(config["roles"]["att_voc"]))
         for role in config["roles"]["deco"]:
@@ -103,7 +106,10 @@ class Recrutement(commands.Cog):
                 await ctx.respond("Utilisateur absent de la base de données")
             else:
                 self.bot.db.commit()
-                await user.edit(nick=None)
+                try:
+                    await user.edit(nick=None)
+                except discord.errors.Forbidden:
+                    pass
                 await ctx.respond(f"{user.mention} a correctement été supprimer de la base de données")
         except IntegrityError:
             await ctx.respond("Utilisateur absent de la base de données")
@@ -294,8 +300,11 @@ class RegisterModal(Modal):
 
         # Rename user + add role + rename channel
         member_principal_guild = self.bot.get_guild(config["principal_guild_id"]).get_member(interaction.user.id)
-        await member_principal_guild.edit(nick=f"Candidat | {data['pseudo_ingame']}")
-        await interaction.user.edit(nick=f"Candidat | {data['pseudo_ingame']}")
+        try:
+            await member_principal_guild.edit(nick=f"Candidat | {data['pseudo_ingame']}")
+            await interaction.user.edit(nick=f"Candidat | {data['pseudo_ingame']}")
+        except discord.errors.Forbidden:
+            pass
         await interaction.channel.edit(name=data['pseudo_ingame'])
         await interaction.user.add_roles(interaction.guild.get_role(config["roles"]["att_voc"]))
 

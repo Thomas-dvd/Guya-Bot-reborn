@@ -74,8 +74,8 @@ class Rank(commands.Cog):
             embed.add_field(name="Grade :", value="Nouvelle recrue")
 
             pays = data["pays"] in config["list_pays"]
-            maison = data["statut_maison"] == 1
-            time = data["anciennete"] == 1
+            maison = data["statut_maison"] >= 1
+            time = data["anciennete"] >= 1
             do_player_info = data["has_done_player_info"] == 1
 
             if maison and time and do_player_info:
@@ -133,9 +133,9 @@ class Rank(commands.Cog):
         elif data["grade"] == 2:  # Recrue confirmé
             embed.add_field(name="Grade :", value="Recrue confirmé")
 
-            maison = data["statut_maison"] == 2
-            double_compte = data["double_compte"] == 1
-            time = data["anciennete"] == 2
+            maison = data["statut_maison"] >= 2
+            double_compte = data["double_compte"] >= 1
+            time = data["anciennete"] >= 2
 
             if maison and time and double_compte:
                 text += f"**Condition intégration :** ✅\n"
@@ -335,7 +335,7 @@ class Rank(commands.Cog):
             await channel_gg.send(f"Félicitaion à {user.mention} qui passe Membre confirmé. 🎉")
             grade = "Membre+"
         elif data == 4:
-            if not ctx.user.get_role(config["roles"]["gouverneur"]):
+            if not ctx.user.get_role(config["roles"]["gouverneur"]) or not ctx.user.get_role(config["roles"]["gouverneur_sec"]):
                 await ctx.respond("Seul un gouverneur ou le leader peu rank un membre confirmé officier.")
                 return
             else:
@@ -359,8 +359,11 @@ class Rank(commands.Cog):
             return
 
         ig_name = cur.execute("SELECT pseudo_ingame FROM recrutement WHERE id_discord=?", [user.id]).fetchone()
-        await member_principal_guild.edit(nick=f"{grade} | {ig_name[0]}")
-        await member_secondary_guild.edit(nick=f"{grade} | {ig_name[0]}")
+        try:
+            await member_principal_guild.edit(nick=f"{grade} | {ig_name[0]}")
+            await member_secondary_guild.edit(nick=f"{grade} | {ig_name[0]}")
+        except discord.errors.Forbidden:
+            pass
         cur.execute("UPDATE recrutement SET grade = grade+1 WHERE id_discord=?", [user.id])
         self.bot.db.commit()
         cur.close()
@@ -424,8 +427,11 @@ class Rank(commands.Cog):
             return
 
         ig_name = cur.execute("SELECT pseudo_ingame FROM recrutement WHERE id_discord=?", [user.id]).fetchone()
-        await member_principal_guild.edit(nick=f"{grade} | {ig_name[0]}")
-        await member_secondary_guild.edit(nick=f"{grade} | {ig_name[0]}")
+        try:
+            await member_principal_guild.edit(nick=f"{grade} | {ig_name[0]}")
+            await member_secondary_guild.edit(nick=f"{grade} | {ig_name[0]}")
+        except discord.errors.Forbidden:
+            pass
         cur.execute("UPDATE recrutement SET grade = grade-1 WHERE id_discord=?", [user.id])
         self.bot.db.commit()
         cur.close()
