@@ -40,11 +40,18 @@ class AaronApi:
                 break
         else:
             raise Exception("Impossible de trouver le serveur green")
-        return {
-            "exist": True,
-            "country": green["country"]["name"],
-            "last_connection": green["last_connection"]
-        }
+        try:
+            return {
+                "exist": True,
+                "country": green["country"]["name"],
+                "last_connection": green["last_connection"]
+            }
+        except KeyError:
+            return {
+                "exist": True,
+                "country": None,
+                "last_connection": green["last_connection"]
+            }
 
 
 if __name__ == '__main__':
