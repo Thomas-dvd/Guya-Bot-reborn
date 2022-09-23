@@ -323,19 +323,22 @@ class Rank(commands.Cog):
             await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["nouvelle_recrue"]))
             await ctx.respond(f"{user.mention} est passé recrue confirmé")
             await channel_gg.send(f"Félicitaion à {user.mention} qui passe Recrue confirmé. 🎉")
+            cur.execute("UPDATE recrutement SET grade = 2 WHERE id_discord=?", [user.id])
             grade = "Recrue+"
         elif data == 2:
             await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["membre"]))
             await ctx.respond(f"{user.mention} est passé Membre")
             await channel_gg.send(f"Félicitaion à {user.mention} qui passe Membre. 🎉")
+            cur.execute("UPDATE recrutement SET grade = 3 WHERE id_discord=?", [user.id])
             grade = "Membre"
         elif data == 3:
             await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["membre_confirme"]))
             await ctx.respond(f"{user.mention} est passé Membre confirmé")
             await channel_gg.send(f"Félicitaion à {user.mention} qui passe Membre confirmé. 🎉")
+            cur.execute("UPDATE recrutement SET grade = 4 WHERE id_discord=?", [user.id])
             grade = "Membre+"
         elif data == 4:
-            if not ctx.user.get_role(config["roles"]["gouverneur"]) or not ctx.user.get_role(config["roles"]["gouverneur_sec"]):
+            if not ctx.user.get_role(config["roles"]["gouverneur"]) and not ctx.user.get_role(config["roles"]["gouverneur_sec"]):
                 await ctx.respond("Seul un gouverneur ou le leader peu rank un membre confirmé officier.")
                 return
             else:
@@ -344,6 +347,7 @@ class Rank(commands.Cog):
                 await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["deco_hauts_grade"]))
                 await ctx.respond(f"{user.mention} est passé officier")
                 await channel_gg.send(f"Félicitaion à {user.mention} qui passe Officier. 🎉")
+                cur.execute("UPDATE recrutement SET grade = 5 WHERE id_discord=?", [user.id])
                 grade = "Officier"
         elif data == 5:
             if not ctx.user.get_role(config["roles"]["second"]):
@@ -354,6 +358,7 @@ class Rank(commands.Cog):
                 await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["deco_dieu"]))
                 await ctx.respond(f"{user.mention} est passé gouverneur")
                 await channel_gg.send(f"Félicitaion à {user.mention} qui passe Gouverneur. 🎉")
+                cur.execute("UPDATE recrutement SET grade = 6 WHERE id_discord=?", [user.id])
                 grade = "Gouverneur"
         else:
             return
@@ -364,7 +369,6 @@ class Rank(commands.Cog):
             await member_secondary_guild.edit(nick=f"{grade} | {ig_name[0]}")
         except discord.errors.Forbidden:
             pass
-        cur.execute("UPDATE recrutement SET grade = grade+1 WHERE id_discord=?", [user.id])
         self.bot.db.commit()
         cur.close()
 
@@ -385,43 +389,45 @@ class Rank(commands.Cog):
 
         data = temp_data[0]
         if not 1 < data < 7:
-            if data == 0:
-                await ctx.respond("Le passage des candidats nouvelle recrues s'effectue via la commande /bvn")
-            else:
-                await ctx.respond("Cette personne n'est pas unrankable")
+            await ctx.respond("Cette personne n'est pas unrankable")
             return
 
         if data == 2:
             await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["recrue_confirme"]))
             await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["nouvelle_recrue"]))
-            await ctx.respond(f"{user.mention} est passé Nouvelle recrue")
+            await ctx.respond(f"{user.mention} est passé recrue")
+            cur.execute("UPDATE recrutement SET grade = 1 WHERE id_discord=?", [user.id])
             grade = "Recrue"
         elif data == 3:
             await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["membre"]))
-            await ctx.respond(f"{user.mention} est passé Recrue confirmé")
+            await ctx.respond(f"{user.mention} est passé Recrue+")
+            cur.execute("UPDATE recrutement SET grade = 2 WHERE id_discord=?", [user.id])
             grade = "Recrue+"
         elif data == 4:
             await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["membre_confirme"]))
             await ctx.respond(f"{user.mention} est passé Membre")
+            cur.execute("UPDATE recrutement SET grade = 3 WHERE id_discord=?", [user.id])
             grade = "Membre"
         elif data == 5:
-            if not member_principal_guild.get_role(config["roles"]["gouverneur"]):
-                await ctx.respond("Seul un gouverneur ou le leader peu unrank un officier.")
+            if not ctx.user.get_role(config["roles"]["gouverneur"]) and not ctx.user.get_role(config["roles"]["gouverneur_sec"]):
+                await ctx.respond("Seul un gouverneur ou le leader peu unrank un officier membre confirmé .")
                 return
             else:
                 await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["officier_prim"]))
                 await member_secondary_guild.remove_roles(secondary_guild.get_role(config["roles"]["officier_sec"]))
                 await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["deco_hauts_grade"]))
                 await ctx.respond(f"{user.mention} est passé Membre confirmé")
+                cur.execute("UPDATE recrutement SET grade = 4 WHERE id_discord=?", [user.id])
                 grade = "Membre+"
-        elif data == 5:
-            if not member_principal_guild.get_role(config["roles"]["second"]):
-                await ctx.respond("Seul le leader peu unrank un gouverneur <3")
+        elif data == 6:
+            if not ctx.user.get_role(config["roles"]["second"]):
+                await ctx.respond("Seul le leader pour unrank les officiers")
                 return
             else:
                 await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["gouverneur"]))
                 await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["deco_dieu"]))
-                await ctx.respond(f"{user.mention} est passé officier")
+                await ctx.respond(f"{user.mention} est passé Officier")
+                cur.execute("UPDATE recrutement SET grade = 5 WHERE id_discord=?", [user.id])
                 grade = "Officier"
         else:
             return

@@ -202,9 +202,7 @@ class Debug(commands.Cog):
         # print(bdd_data, aaron_data)
         cur = self.bot.db.cursor()
         principal_guild = self.bot.get_guild(config["principal_guild_id"])
-        secondary_guild = self.bot.get_guild(config["secondary_guild_id"])
         member_principal_guild = principal_guild.get_member(bdd_data["id_discord"])
-        member_secondary_guild = secondary_guild.get_member(bdd_data["id_discord"])
         bot_channel = principal_guild.get_channel(config["channels"]["bot_data_channel"])
 
         # vérifie si le joueur existe bien IG
@@ -227,7 +225,7 @@ class Debug(commands.Cog):
                 await msg.add_reaction("✅")
             except Forbidden or AttributeError:
                 pass
-        if jours_deco == 14 and bdd_data["absence_fin"] is None:
+        if jours_deco >= 14 and bdd_data["absence_fin"] is None:
             await bot_channel.send(f"L'utilisateur {bdd_data['pseudo_ingame']} est absent depuis 14 jours.")
 
         # fin absence
@@ -267,11 +265,6 @@ class Debug(commands.Cog):
                 await bot_channel.send(f"L'utilisateur {bdd_data['pseudo_ingame']} n'est plus vérifié sur le discord principal.")
         except AttributeError:
             await bot_channel.send(f"L'utilisateur {bdd_data['pseudo_ingame']} n'est plus sur le discord principal.")
-        try:
-            if not member_secondary_guild.get_role(config["roles"]["verifie_sec"]):
-                await bot_channel.send(f"L'utilisateur {bdd_data['pseudo_ingame']} n'est plus vérifié sur le discord secondaire.")
-        except AttributeError:
-            await bot_channel.send(f"L'utilisateur {bdd_data['pseudo_ingame']} n'est plus sur le discord secondaire.")
 
         self.bot.db.commit()
         cur.close()
