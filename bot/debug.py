@@ -205,8 +205,16 @@ class Debug(commands.Cog):
         member_principal_guild = principal_guild.get_member(bdd_data["id_discord"])
         bot_channel = principal_guild.get_channel(config["channels"]["bot_data_channel"])
 
+        # Leave discord
+        if member_principal_guild is None:
+            await bot_channel.send(f"L'utilisateur {bdd_data['pseudo_ingame']} n'est plus sur le discord principal.")
+            return
+        elif not member_principal_guild.get_role(config["roles"]["verifie"]):
+            await bot_channel.send(f"L'utilisateur {bdd_data['pseudo_ingame']} n'est plus vérifié sur le discord.")
+            return
+
         # vérifie si le joueur existe bien IG
-        if not aaron_data["exist"]:
+        elif not aaron_data["exist"]:
             await bot_channel.send(f"L'utilisateur enregistrer sous le nom de {bdd_data['pseudo_ingame']} n'existe pas (ID: {bdd_data['id']})")
             return
 
@@ -223,7 +231,7 @@ class Debug(commands.Cog):
                     f"Salut {member_principal_guild.mention} 👋. Je t'envoie un message car cela fait 7 jours que tu ne t'es pas co sur NationsGlory, tu nous manques :( !\n\n**N'oublie pas que :**\n- Si tu ne peux plus te connecter car tu n'as pas le temps (ou l'envie), il n'y a pas de problème, prévient nous juste sur ton ticket qu'on sache que tu n'as pas arrêter le jeu\n- Si tu ne te co plus car tu ne sais pas quoi faire sur le jeu, tu peux demander aux officiers et recruteurs quels sont les différents projets du pays (Mon /player-info peu également t'être utile !)\n- Si tu ass décidé d'arrêter NationsGlory, il n'y a pas de problème, prévient nous juste qu'on sache qui est actif et qui ne l'est pas dans le pays ;) Et n'oublie pas : tu seras toujours le bienvenue.\n- Si tu t'es bien co ces derniers temps et que ce message est une erreur...il doit y avoir un bug dans mon code. Envoie un message sur ton ticket pour prévenir dû soucie")
                 msg = await bot_channel.send(f"L'utilisateur {bdd_data['pseudo_ingame']} est absent depuis 7 jours. Un message lui a bien été envoyé 👍")
                 await msg.add_reaction("✅")
-            except Forbidden or AttributeError:
+            except Forbidden:
                 pass
         if jours_deco >= 14 and bdd_data["absence_fin"] is None:
             await bot_channel.send(f"L'utilisateur {bdd_data['pseudo_ingame']} est absent depuis 14 jours.")
@@ -238,33 +246,26 @@ class Debug(commands.Cog):
             try:
                 await member_principal_guild.send(
                     f"Félicitation, cela fait maintenant 1 semaine que tu est dans le pays ! tu as automatiquement validé la condition \"ancienneté\" dans les conditions de ranks (plus d'info avec le /player-info)")
-            except Forbidden or AttributeError:
+            except Forbidden:
                 pass
         if date.today() - date.fromisoformat(bdd_data["date_recrutement"]) >= timedelta(days=31) and bdd_data["anciennete"] <= 1:
             cur.execute("UPDATE recrutement SET anciennete=2 WHERE id_discord=?", [bdd_data["id_discord"]])
             try:
                 await member_principal_guild.send(
                     f"Félicitation, cela fait maintenant 1 mois que tu est dans le pays ! tu as automatiquement validé la condition \"ancienneté\" dans les conditions de ranks (plus d'info avec le /player-info)")
-            except Forbidden or AttributeError:
+            except Forbidden:
                 pass
         if date.today() - date.fromisoformat(bdd_data["date_recrutement"]) >= timedelta(days=90) and bdd_data["anciennete"] <= 2:
             cur.execute("UPDATE recrutement SET anciennete=3 WHERE id_discord=?", [bdd_data["id_discord"]])
             try:
                 await member_principal_guild.send(
                     f"Félicitation, cela fait maintenant 3 mois que tu est dans le pays ! tu as automatiquement validé la condition \"ancienneté\" dans les conditions de ranks (plus d'info avec le /player-info)")
-            except Forbidden or AttributeError:
+            except Forbidden:
                 pass
 
         # Bon pays
         if not aaron_data["country"] in config["list_pays"] and bdd_data["peut_quitter_pays"] is None:
             await bot_channel.send(f"L'utilisateur {bdd_data['pseudo_ingame']} n'est plus dans l'un des pays GDE et ne dispose d'aucune autorisation a cette effet.")
-
-        # Leave discord
-        try:
-            if not member_principal_guild.get_role(config["roles"]["verifie"]):
-                await bot_channel.send(f"L'utilisateur {bdd_data['pseudo_ingame']} n'est plus vérifié sur le discord principal.")
-        except AttributeError:
-            await bot_channel.send(f"L'utilisateur {bdd_data['pseudo_ingame']} n'est plus sur le discord principal.")
 
         self.bot.db.commit()
         cur.close()

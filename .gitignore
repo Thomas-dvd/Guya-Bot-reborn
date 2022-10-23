@@ -2,6 +2,7 @@
 database.db
 config.json
 devconfig.json
+trueconfig.json
 
 .idea/
 __pycache__/

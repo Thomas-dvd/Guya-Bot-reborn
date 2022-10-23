@@ -2,7 +2,7 @@ import json
 from datetime import date, timedelta
 
 import discord
-from discord import Option
+from discord import Option, Color
 from discord.ext import commands
 
 import utils
@@ -83,20 +83,21 @@ class Rank(commands.Cog):
             else:
                 text += f"**Condition intégration :** ❌\n"
             if pays:
-                if maison:
-                    text += "__Maison :__ ✅\n"
-                else:
-                    text += f"__Maison :__ ❌ Tu doit encore finir ta maison et la faire validé, pour plus d'information, consulte le #build. [?]({config['links_doc']['maison_1']})\n"
+                text += f"__Pays :__ ✅\n"
             else:
-                text += f"__Pays :__ ❌ Tu doit encore rejoindre le pays. [?]({config['links_doc']['pays']})\n"
+                text += f"__Pays :__ ❌ Tu doit encore rejoindre le pays. 1️⃣\n"
+            if maison:
+                text += "__Maison :__ ✅\n"
+            else:
+                text += f"__Maison :__ ❌ Tu doit encore finir ta maison. 2️⃣\n"
             if time:
                 text += "__Ancienneté :__ ✅\n"
             else:
-                text += "__Ancienneté :__ ❌ Tu doit avoir une semaine d'ancienneté.\n"
+                text += "__Ancienneté :__ ❌ Tu doit avoir une semaine d'ancienneté. 3️⃣\n"
             if do_player_info:
                 text += "__Utilisation du bot :__ ✅\n"
             else:
-                text += f"__Utilisation du bot :__ ❌ Tu doit t'être renseigné au moins une fois sur tes conditions de rank. [?]({config['links_doc']['utilisation_bot']})\n"
+                text += f"__Utilisation du bot :__ ❌ Tu doit t'être renseigné au moins une fois sur tes conditions de rank. 4️⃣\n"
 
             grade_farm = user.get_role(config["roles"]["farmer"]) is not None
             donation = data["donations"] >= 5000
@@ -109,9 +110,9 @@ class Rank(commands.Cog):
                 if donation:
                     text += "__Contribution économique :__ ✅\n"
                 else:
-                    text += f"__Contribution économique :__ ❌ Tu doit encore farmer {5000 - data['donations']}$. [?]({config['links_doc']['donation_1']})\n"
+                    text += f"__Contribution économique :__ ❌ Tu doit encore farmer {5000 - data['donations']}$ pour le pays. 5️⃣\n"
             else:
-                text += "__Farming :__ ❌ Pour rejoindre le pôle économique, tu doit récupérer le grade @Farmer dans #pole.\n"
+                text += "__Farming :__ ❌ Pour rejoindre le pôle économique, tu doit récupérer le grade @Farmer. 6️⃣\n"
 
             grade_const = user.get_role(config["roles"]["constructeur"]) is not None
             projet = data["constructions"] >= 1
@@ -124,9 +125,9 @@ class Rank(commands.Cog):
                 if projet:
                     text += "__Contribution de build :__ ✅\n"
                 else:
-                    text += f"__Contribution de build :__ ❌ Tu doit participer a encore au moins {1 - data['constructions']} chantier de build. [?]({config['links_doc']['construction_1']})\n"
+                    text += f"__Contribution de build :__ ❌ Tu doit participer a encore au moins {1 - data['constructions']} chantier de build. 7️⃣\n"
             else:
-                text += "__Constructeur :__ ❌ Pour rejoindre le pôle build, tu doit récupérer le grade @Constructeur dans #pole.\n"
+                text += "__Constructeur :__ ❌ Pour rejoindre le pôle build, tu doit récupérer le grade @Constructeur. 8️⃣\n"
 
             text += f"\n**Récompense de rank :** Full prototype sombre"
 
@@ -144,15 +145,15 @@ class Rank(commands.Cog):
             if maison:
                 text += "__Maison :__ ✅\n"
             else:
-                text += f"__Maison :__ ❌ Tu doit encore finir ta maison de membre. [?]({config['links_doc']['maison_2']})\n"
+                text += f"__Maison :__ ❌ Tu doit encore finir ta maison de membre. 1️⃣\n"
             if double_compte:
                 text += "__Double compte :__ ✅\n"
             else:
-                text += f"__Double compte :__ ❌ Tu doit mettre un DC dans le trinité-et-tobago, contacte les officiers pour te faire invité. [?]({config['links_doc']['double_compte']})\n"
+                text += f"__Double compte :__ ❌ Tu doit mettre un DC dans le trinité-et-tobago. 2️⃣\n"
             if time:
                 text += "__Ancienneté :__ ✅\n"
             else:
-                text += "__Ancienneté :__ ❌ Tu doit avoir un mois d'ancienneté.\n"
+                text += "__Ancienneté :__ ❌ Tu doit avoir un mois d'ancienneté. 3️⃣\n"
 
             donation = data["donations"] >= 20000
 
@@ -163,7 +164,7 @@ class Rank(commands.Cog):
             if donation:
                 text += "__Contribution économique :__ ✅\n"
             else:
-                text += f"__Contribution économique :__ ❌ Tu doit encore farmer {20000 - data['donations']}$\n"
+                text += f"__Contribution économique :__ ❌ Tu doit encore farmer {20000 - data['donations']}$ pour le pays. 4️⃣\n"
 
             projet = data["constructions"] >= 4
 
@@ -174,7 +175,7 @@ class Rank(commands.Cog):
             if projet:
                 text += "__Contribution de build :__ ✅\n"
             else:
-                text += f"__Contribution de build :__ ❌ Tu doit participer a encore au moins {4 - data['constructions']} chantier de build\n"
+                text += f"__Contribution de build :__ ❌ Tu doit participer a encore au moins {4 - data['constructions']} chantier de build. 5️⃣\n"
 
             animation = data["participation_animation"] == 1
 
@@ -185,7 +186,7 @@ class Rank(commands.Cog):
             if animation:
                 text += "__Participation a une animation :__ ✅\n"
             else:
-                text += f"__Participation a une animation :__ ❌ Tu doit participer a une animation (demander aux animateur de noté ta participation)\n"
+                text += f"__Participation a une animation :__ ❌ Tu doit participer a une animation (demander aux animateur de noté ta participation. 6️⃣)\n"
 
             text += f"\n**Récompense de rank :** Jump boots (immunise contre les dégâts de chute et permet des sauts de 5 blocs)"
 
@@ -201,7 +202,7 @@ class Rank(commands.Cog):
             if time:
                 text += "__Ancienneté :__ ✅\n\n"
             else:
-                text += "__Ancienneté :__ ❌ Tu doit avoir 3 mois d'ancienneté.\n\n"
+                text += "__Ancienneté :__ ❌ Tu doit avoir 3 mois d'ancienneté. 1️⃣\n\n"
 
             donation = data["donations"] >= 70000
             projet = data["constructions"] >= 9
@@ -233,7 +234,7 @@ class Rank(commands.Cog):
                 text += "| __Contribution :__ ✅\n"
             else:
                 text += f"|\n| **Pôle économique :** ❌\n"
-                text += f"| __Contribution :__ ❌ Tu doit encore farmer {70000 - data['donations']}$\n"
+                text += f"| __Contribution :__ ❌ Tu doit encore farmer {70000 - data['donations']}$ pour le pays. 2️⃣\n"
 
             if projet and grade_archi_builder:
                 text += f"|\n| **Pôle build :** ✅\n"
@@ -242,11 +243,11 @@ class Rank(commands.Cog):
             if projet:
                 text += "| __Contribution de build :__ ✅\n"
             else:
-                text += f"| __Contribution de build :__ ❌ Tu doit participer a encore au moins {9 - data['constructions']} chantier de build\n"
+                text += f"| __Contribution de build :__ ❌ Tu doit participer a encore au moins {9 - data['constructions']} chantier de build. 3️⃣\n"
             if grade_archi_builder:
                 text += "| __Gestion de build :__ ✅\n"
             else:
-                text += f"| __Gestion de build :__ ❌ Tu doit candidaté pour devenir @Architecte ou @Builder\n"
+                text += f"| __Gestion de build :__ ❌ Tu doit candidaté pour devenir @Architecte ou @Builder. 4️⃣\n"
 
             if grade_anim and animation:
                 text += f"|\n| **Pôle animation :** ✅\n"
@@ -256,9 +257,9 @@ class Rank(commands.Cog):
                 if animation:
                     text += "| __Animation :__ ✅\n"
                 else:
-                    text += f"| __Animation :__ ❌ Tu doit encore organiser au moins {9 - data['creer_animation']} animations\n"
+                    text += f"| __Animation :__ ❌ Tu doit encore organiser au moins {9 - data['creer_animation']} animations. 6️⃣\n"
             else:
-                text += f"| __Animation :__ ❌ Tu doit candidaté pour devenir @Animateur\n"
+                text += f"| __Animation :__ ❌ Tu doit candidaté pour devenir @Animateur. 5️⃣\n"
 
             if grade_recru and nb_recrutement:
                 text += f"|\n| **Pôle recrutement :** ✅\n"
@@ -268,9 +269,9 @@ class Rank(commands.Cog):
                 if nb_recrutement:
                     text += "| __Recrutement :__ ✅\n"
                 else:
-                    text += f"| __Recrutement :__ ❌ Tu doit encore recruter au moins {10 - data['nb_recrutement']} joueurs\n"
+                    text += f"| __Recrutement :__ ❌ Tu doit encore recruter au moins {10 - data['nb_recrutement']} joueurs. 8️⃣\n"
             else:
-                text += f"| __Recrutement :__ ❌ Tu doit candidaté pour devenir @Recruteur\n"
+                text += f"| __Recrutement :__ ❌ Tu doit candidaté pour devenir @Recruteur. 7️⃣\n"
 
             text += "\n**Récompense de rank :** Speed Leg (+40% de vitesse de déplacement)"
 
@@ -293,6 +294,71 @@ class Rank(commands.Cog):
         embed.add_field(name="}============{ Condition de rank }============{", value=f"{text}", inline=False)
 
         await ctx.respond(embed=embed)
+
+    # Detection réaction player-info
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        channel = self.bot.get_channel(payload.channel_id)
+        message = await channel.fetch_message(payload.message_id)
+
+        if f"{message.author}" != f"{self.bot.user.name}#{self.bot.user.discriminator}":
+            return
+        embed = message.embeds[0]
+        check = embed.fields[6].name
+        grade = embed.fields[6].value
+
+        if check != "Grade :":
+            return
+
+        if grade == "Nouvelle recrue":
+            if payload.emoji.name == "1️⃣":
+                await message.reply(f"__La condition de rank **Pays** (réaction 1️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition est automatique, elle ce valide toute seule dès que vous avez rejoint un des pays de la GDE IG (peu mettre jusqu'a 24h à s'actualiser")
+            if payload.emoji.name == "2️⃣":
+                await message.reply(f"__La condition de rank **Maison** (réaction 2️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition est valider par un administrateur quand votre maison est conforme.\n\n **1 - Trouver son schématique :**\n\nPour construire votre maison, vous devez télécharger le schématique disponible en cliquant sur le texte en bleu en dessous de \"Schématique\" dans le /player-info (Pour apprendre à utiliser Schematica : X).\nVotre schématique fait précisément 16x16 blocs, exactement la même taille que votre chunk. Il faut donc le poser de telle sorte qu'il rentre dedans. Il n'est pas nécessaire de tourner le schématique, celui-ci est directement dans le bon sens. Arrangez-vous pour que la hauteur du sol (laine rouge, bleu et vert) corresponde au sols des maisons mitoyennes.\n\n**2 - Les blocs à utiliser :**\n\nUne fois le schématique posé correctement, il faut commencer à le construire avec les mêmes blocs que ceux affichés (à l'exception de la laine posée au sol). Tous les blocs sont disponibles au __/f home__ dans des chestshop (shop automatisé avec des panneaux) à l'exception de la laine, celle-ci n'est pas à poser, voir ci dessous. *__Tips__ : Il est conseillé de construire sa maison couche par couche*\n\n**3 - Construire la route devant sa maison (Laines) :**\n\nLes 4 types de laines correspondent en réalité à un \"damier\" de plusieurs blocs différents à poser de manière aléatoire. Au bkr, chaque coffre avec une laine (rouge, bleu ou verte) doit être utilisé pour le damier en rapport. Pour le damier cyan, il faut mélanger des blocs du damier rouge et bleu.\n\n**4 - Meublement de votre maison :**\n\nPour finir, rajouter de la décoration à l'intérieur et à l'extérieur pour permettre de valider officiellement votre maison. (le meublement se fait à votre guise et selon vos goûts)\n\n**=> Votre maison est alors finie. Crée un ticket en rapport dans <#1019554369764589579>. Envoyez les coordonnées de votre maison**")
+            if payload.emoji.name == "3️⃣":
+                await message.reply(f"__La condition de rank **Ancienneté** (réaction 3️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition est automatique, elle ce valide d'elle même lorsque votre ancienneté dépasse 1 semaine (calculer sur la date du /register), un message vous sera par ailleurs également envoyé")
+            if payload.emoji.name == "4️⃣":
+                await message.reply(f"__La condition de rank **Utilisation du bot** (réaction 4️⃣) :__ *demander par {payload.member.mention}*\n \nCondition qui ce valide dès lors que vous avez fait au moins 1 /player-info")
+            if payload.emoji.name == "5️⃣":
+                await message.reply(f"__La condition de rank **Contribution économique** (réaction 5️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition doit être valider manuellement. Le pôle économiques met a votre dispositions diverses techniques de farms pour ce faire de l'argent, que vous êtes libre d'utiliser ou non.\nPour passer Recrue confirmé, nous demander a toute les Nouvelles recrues une donation de 5.000$ au pays. Pour la faire, executez la commande __/econ bank deposite guyana 5000__ pour mettre de l'argent dans la banque de la guyana. Un message apparaitra alors dans le chat globale, prenez le alors en photo (double F2 de préférence) et envoyez le dans <#1019966582652416000>, un officier s'occupera alors d'actualiser le montant total de vos donations.\n \n*PS: Vous n'êtes pas obliger de déposer 5.000$ d'un coup, le bot est en mesure de vous dire quel quantité il vous reste a donner. Dans la même logique, vous pouvez donner plus et cela sera pris en compte pour la même condition du passage de Recrue confirmé à Membre*")
+            if payload.emoji.name == "6️⃣":
+                await message.reply(f"__La condition de rank **Contribution de build** (réaction 6️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition est en 2 partie, la première consiste à rejoindre le pôle économique en récupérant le grade Farmer dans le <#1019552996276850720>")
+            if payload.emoji.name == "7️⃣":
+                await message.reply(f"__La condition de rank **Contribution de build** (réaction 7️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition doit être valider manuellement. Dans le pôle build, vous trouverez un fils \"__Accès__\" pour participer au différents projets de constructions de la guyana, et signalé lorsque vous avez finit. Un officier s'occupera alors d'actualiser le total de vos aide au build en guyana.\n \n*PS: Le bot est en mesure de vous dire sur combien de chantier vous avez participer. Vous pouvez donc a participate a plus qu'indiquer et cela sera pris en compte pour la même condition du passage de Recrue confirmé à Membre*")
+            if payload.emoji.name == "8️⃣":
+                await message.reply(f"__La condition de rank **Contribution de build** (réaction 8️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition est en 2 partie, la première consiste à rejoindre le pôle build en récupérant le grade Constructeur dans le <#1019553526319435796>")
+
+        if grade == "Recrue confirmé":
+            if payload.emoji.name == "1️⃣":
+                await message.reply(f"__La condition de rank **Maison** (réaction 1️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition est valider par un administrateur quand votre maison est conforme. Le schématique vous a été fournit au moment de votre rank Recrue confirmé, vous pouvez demander a un officier de vous le redonnez si vous l'avez perdu")
+            if payload.emoji.name == "2️⃣":
+                await message.reply(f"__La condition de rank **Double compte** (réaction 2️⃣) :__ *demander par {payload.member.mention}*\n \nPour aider le pays, nous vous demandons de crée un double compte sur NationsGlory (vous pouvez aller jusqu'a 4 compte sur la même IP). Vous devez alors vous connecter sur le serveur Green et rejoindre le trinité (pays ouvert de base, accessible avec : __/f join triniteettobago__). Envoyez ensuite un screen de votre DC dans le trinité dans le <#1019966582652416000>.\nNous vous demandons également si possible de restez connecter un certains temps sur ce double compte pour monter son power (visible avec la commande __/f s__), pas besoin de faire des actions particulière, juste être connecter")
+            if payload.emoji.name == "3️⃣":
+                await message.reply(f"__La condition de rank **Ancienneté** (réaction 3️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition est automatique, elle ce valide d'elle même lorsque votre ancienneté dépasse 1 mois (calculer sur la date du /register), un message vous sera par ailleurs également envoyé")
+            if payload.emoji.name == "4️⃣":
+                await message.reply(f"__La condition de rank **Contribution économique** (réaction 4️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition doit être valider manuellement. Pour passer Membre, nous demander a toute les Recrues confirmé une donation de 15.000$ au pays. Pour la faire, executez la commande __/econ bank deposite guyana 15000__ pour mettre de l'argent dans la banque de la guyana. Un message apparaitra alors dans le chat globale, prenez le alors en photo (double F2 de préférence) et envoyez le dans <#1019966582652416000>, un officier s'occupera alors d'actualiser le montant total de vos donations.\n \n*PS: Vous n'êtes pas obliger de déposer 15.000$ d'un coup, le bot est en mesure de vous dire quel quantité il vous reste a donner. Dans la même logique, vous pouvez donner plus et cela sera pris en compte pour la même condition du passage de Membre à Membre confirmé*")
+            if payload.emoji.name == "5️⃣":
+                await message.reply(f"__La condition de rank **Contribution de build** (réaction 5️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition doit être valider manuellement. Dans le pôle build, vous trouverez un fils \"__Accès__\" pour participer au différents projets de constructions de la guyana, et signalé lorsque vous avez finit. Un officier s'occupera alors d'actualiser le total de vos aide au build en guyana.\n \n*PS: Le bot est en mesure de vous dire sur combien de chantier vous avez participer. Vous pouvez donc a participate a plus qu'indiquer et cela sera pris en compte pour la même condition du passage de Membre à Membre confirmé*")
+            if payload.emoji.name == "6️⃣":
+                await message.reply(f"__La condition de rank **Participation a une activité** (réaction 6️⃣) :__ *demander par {payload.member.mention}*\n \nPour passer Membre, nous vous demandons d'avoir participer au moins une fois a une animation organiser par le pôle animateur. Le planning est envoyer dans le <#895676485598347305>. N'oublier pas de demander au animateur de valider votre participation à la fin de l'event (une seul fois est suffisante, ce n'est pas cumulable)")
+
+        if grade == "Membre":
+            if payload.emoji.name == "1️⃣":
+                await message.reply(f"__La condition de rank **Ancienneté** (réaction 1️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition est automatique, elle ce valide d'elle même lorsque votre ancienneté dépasse 3 mois (calculer sur la date du /register), un message vous sera par ailleurs également envoyé")
+            if payload.emoji.name == "2️⃣":
+                await message.reply(f"__La condition de rank **Contribution économique** (réaction 2️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition doit être valider manuellement. Pour passer Membre confirmé, nous demander a toute les Recrues confirmé une donation de 50.000$ au pays. Pour la faire, executez la commande __/econ bank deposite guyana 50000__ pour mettre de l'argent dans la banque de la guyana. Un message apparaitra alors dans le chat globale, prenez le alors en photo (double F2 de préférence) et envoyez le dans <#1019966582652416000>, un officier s'occupera alors d'actualiser le montant total de vos donations.\n \n*PS: Vous n'êtes pas obliger de déposer 15.000$ d'un coup, le bot est en mesure de vous dire quel quantité il vous reste a donner.*")
+            if payload.emoji.name == "3️⃣":
+                await message.reply(f"__La condition de rank **Contribution de build** (réaction 3️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition doit être valider manuellement. Dans le pôle build, vous trouverez un fils \"__Accès__\" pour participer au différents projets de constructions de la guyana, et signalé lorsque vous avez finit. Un officier s'occupera alors d'actualiser le total de vos aide au build en guyana.\n \n*PS: Le bot est en mesure de vous dire sur combien de chantier vous avez participer.*")
+            if payload.emoji.name == "4️⃣":
+                await message.reply(f"__La condition de rank **Gestion de build** (réaction 4️⃣) :__ *demander par {payload.member.mention}*\n \nPour valider cette condition, vous devez candidater et devenir Builder ou Architecte via le <#1019843946593140787>")
+            if payload.emoji.name == "5️⃣":
+                await message.reply(f"__La condition de rank **Animation** (réaction 5️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition est en 2 partie, la première consiste à candidater pour le grade Animateur dans le <#1019843946593140787>")
+            if payload.emoji.name == "6️⃣":
+                await message.reply(f"__La condition de rank **Animation** (réaction 6️⃣) :__ *demander par {payload.member.mention}*\n \nVous devez réaliser un minimum de 9 animation en temps qu'animateur (demandez au Resp. Animateur de noté les animations que vous organiser).")
+            if payload.emoji.name == "7️⃣":
+                await message.reply(f"__La condition de rank **Recrutement** (réaction 7️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition est en 2 partie, la première consiste à candidater pour le grade Recruteur dans le <#1019843946593140787>")
+            if payload.emoji.name == "8️⃣":
+                await message.reply(f"__La condition de rank **Recrutement de build** (réaction 8️⃣) :__ *demander par {payload.member.mention}*\n \nVous devez réaliser un minimum de 10 recrutement en temps que recruteur (demandez au Resp. recruteur de noté les recrutement que vous organiser).")
 
     # Command /rank
     @commands.slash_command(description="Permet de rank une personne.", default_permission=False)

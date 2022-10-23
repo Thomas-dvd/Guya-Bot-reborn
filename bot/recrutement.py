@@ -93,24 +93,27 @@ class Recrutement(commands.Cog):
         channel_regiment = principal_guild.get_channel(config["regiments"][regiment]["channel"])
         await channel_regiment.send(random.choice(config["welcome_message"]).format(name=user.mention, regi=regiment))
 
-    # Command /cancel
-    @commands.slash_command(description="Permet d'effacer un joueur de la base de données", default_permission=False)
+    # Command /remove-user
+    @commands.slash_command(name="remove-user", description="Permet d'effacer un joueur de la base de données", default_permission=False)
     @commands.has_any_role(config["roles"]["officier_prim"], config["roles"]["officier_sec"])
-    async def remove_user(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.")):
+    async def remove_user(self, ctx: discord.ApplicationContext, pseudo: Option(str, "Entre un pseudo.")):
         cur = self.bot.db.cursor()
 
         try:
-            cur.execute("DELETE FROM recrutement WHERE id_discord = ?", [str(user.id)])
+            user_id = cur.execute("SELECT id_discord FROM recrutement WHERE pseudo_ingame =?", [pseudo]).fetchone()[0]
+            user = ctx.guild.get_member(user_id)
+            cur.execute("DELETE FROM recrutement WHERE pseudo_ingame = ?", [str(pseudo)])
             cur.execute("SELECT changes()")
             if cur.fetchone()[0] == 0:
                 await ctx.respond("Utilisateur absent de la base de données")
             else:
                 self.bot.db.commit()
-                try:
-                    await user.edit(nick=None)
-                except discord.errors.Forbidden:
-                    pass
-                await ctx.respond(f"{user.mention} a correctement été supprimer de la base de données")
+                if user is not None:
+                    try:
+                        await user.edit(nick=None)
+                    except discord.errors.Forbidden:
+                        pass
+                await ctx.respond(f"<@{user_id}> a correctement été supprimer de la base de données")
         except IntegrityError:
             await ctx.respond("Utilisateur absent de la base de données")
         finally:
