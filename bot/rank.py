@@ -277,11 +277,11 @@ class Rank(commands.Cog):
 
         elif data["grade"] == 4:  # Membre confirmé
             embed.add_field(name="Grade :", value="Membre confirmé")
-            text += "Pour continuer à progresser dans le pays, il n'y a plus de conditions de rank précises. Le rank officier ou gouverneur, est rare, il faut valider de nombreuses conditions. Le meilleur moyen de passé officier, c'es-t-en continuant, tous les jours à t'investir pour le pays, à être présent et à l'écoute des autres, et ainsi permettre à notre nation d'avancer"
+            text += "Pour continuer à progresser dans le pays, il n'y a plus de conditions de rank précises. Le rank Officier ou gouverneur, est rare, il faut valider de nombreuses conditions. Le meilleur moyen de passé Officier, c'es-t-en continuant, tous les jours à t'investir pour le pays, à être présent et à l'écoute des autres, et ainsi permettre à notre nation d'avancer"
 
         elif data["grade"] == 5:  # Officier
             embed.add_field(name="Grade :", value="Officier")
-            text += "Pour continuer à progresser dans le pays, il n'y a plus de conditions de rank précises. Le rank officier ou gouverneur, est rare, il faut valider de nombreuses critères. Le meilleur moyen de passé officier, c'es-t-en continuant, tous les jours à t'investir pour le pays, à être présent et à l'écoute des autres, et ainsi permettre à notre nation d'avancer"
+            text += "Pour continuer à progresser dans le pays, il n'y a plus de conditions de rank précises. Le rank Officier ou gouverneur, est rare, il faut valider de nombreuses critères. Le meilleur moyen de passé Officier, c'es-t-en continuant, tous les jours à t'investir pour le pays, à être présent et à l'écoute des autres, et ainsi permettre à notre nation d'avancer"
 
         elif data["grade"] == 6:  # Gouverneur
             embed.add_field(name="Grade :", value="Gouverneur")
@@ -320,25 +320,25 @@ class Rank(commands.Cog):
             if payload.emoji.name == "4️⃣":
                 await message.reply(f"__La condition de rank **Utilisation du bot** (réaction 4️⃣) :__ *demander par {payload.member.mention}*\n \nCondition qui ce valide dès lors que vous avez fait au moins 1 /player-info")
             if payload.emoji.name == "5️⃣":
-                await message.reply(f"__La condition de rank **Contribution économique** (réaction 5️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition doit être valider manuellement. Le pôle économiques met a votre dispositions diverses techniques de farms pour ce faire de l'argent, que vous êtes libre d'utiliser ou non.\nPour passer Recrue confirmé, nous demander a toute les Nouvelles recrues une donation de 5.000$ au pays. Pour la faire, executez la commande __/econ bank deposite guyana 5000__ pour mettre de l'argent dans la banque de la guyana. Un message apparaitra alors dans le chat globale, prenez le alors en photo (double F2 de préférence) et envoyez le dans <#1019966582652416000>, un officier s'occupera alors d'actualiser le montant total de vos donations.\n \n*PS: Vous n'êtes pas obliger de déposer 5.000$ d'un coup, le bot est en mesure de vous dire quel quantité il vous reste a donner. Dans la même logique, vous pouvez donner plus et cela sera pris en compte pour la même condition du passage de Recrue confirmé à Membre*")
+                await message.reply(f"__La condition de rank **Contribution économique** (réaction 5️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition doit être valider manuellement. Le pôle économiques met a votre dispositions diverses techniques de farms pour ce faire de l'argent, que vous êtes libre d'utiliser ou non.\nPour passer Recrue confirmé, nous demander a toute les Nouvelles recrues une donation de 5.000$ au pays. Pour la faire, executez la commande __/econ bank deposite guyana 5000__ pour mettre de l'argent dans la banque de la guyana. Un message apparaitra alors dans le chat globale, prenez le alors en photo (double F2 de préférence) et envoyez le dans <#1019966582652416000>, un Officier s'occupera alors d'actualiser le montant total de vos donations.\n \n*PS: Vous n'êtes pas obliger de déposer 5.000$ d'un coup, le bot est en mesure de vous dire quel quantité il vous reste a donner. Dans la même logique, vous pouvez donner plus et cela sera pris en compte pour la même condition du passage de Recrue confirmé à Membre*")
             if payload.emoji.name == "6️⃣":
                 await message.reply(f"__La condition de rank **Contribution de build** (réaction 6️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition est en 2 partie, la première consiste à rejoindre le pôle économique en récupérant le grade Farmer dans le <#1019552996276850720>")
             if payload.emoji.name == "7️⃣":
-                await message.reply(f"__La condition de rank **Contribution de build** (réaction 7️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition doit être valider manuellement. Dans le pôle build, vous trouverez un fils \"__Accès__\" pour participer au différents projets de constructions de la guyana, et signalé lorsque vous avez finit. Un officier s'occupera alors d'actualiser le total de vos aide au build en guyana.\n \n*PS: Le bot est en mesure de vous dire sur combien de chantier vous avez participer. Vous pouvez donc a participate a plus qu'indiquer et cela sera pris en compte pour la même condition du passage de Recrue confirmé à Membre*")
+                await message.reply(f"__La condition de rank **Contribution de build** (réaction 7️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition doit être valider manuellement. Dans le pôle build, vous trouverez un fils \"__Accès__\" pour participer au différents projets de constructions de la guyana, et signalé lorsque vous avez finit. Un Officier s'occupera alors d'actualiser le total de vos aide au build en guyana.\n \n*PS: Le bot est en mesure de vous dire sur combien de chantier vous avez participer. Vous pouvez donc a participate a plus qu'indiquer et cela sera pris en compte pour la même condition du passage de Recrue confirmé à Membre*")
             if payload.emoji.name == "8️⃣":
                 await message.reply(f"__La condition de rank **Contribution de build** (réaction 8️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition est en 2 partie, la première consiste à rejoindre le pôle build en récupérant le grade Constructeur dans le <#1019553526319435796>")
 
         if grade == "Recrue confirmé":
             if payload.emoji.name == "1️⃣":
-                await message.reply(f"__La condition de rank **Maison** (réaction 1️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition est valider par un administrateur quand votre maison est conforme. Le schématique vous a été fournit au moment de votre rank Recrue confirmé, vous pouvez demander a un officier de vous le redonnez si vous l'avez perdu")
+                await message.reply(f"__La condition de rank **Maison** (réaction 1️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition est valider par un administrateur quand votre maison est conforme. Le schématique vous a été fournit au moment de votre rank Recrue confirmé, vous pouvez demander a un Officier de vous le redonnez si vous l'avez perdu")
             if payload.emoji.name == "2️⃣":
                 await message.reply(f"__La condition de rank **Double compte** (réaction 2️⃣) :__ *demander par {payload.member.mention}*\n \nPour aider le pays, nous vous demandons de crée un double compte sur NationsGlory (vous pouvez aller jusqu'a 4 compte sur la même IP). Vous devez alors vous connecter sur le serveur Green et rejoindre le trinité (pays ouvert de base, accessible avec : __/f join triniteettobago__). Envoyez ensuite un screen de votre DC dans le trinité dans le <#1019966582652416000>.\nNous vous demandons également si possible de restez connecter un certains temps sur ce double compte pour monter son power (visible avec la commande __/f s__), pas besoin de faire des actions particulière, juste être connecter")
             if payload.emoji.name == "3️⃣":
                 await message.reply(f"__La condition de rank **Ancienneté** (réaction 3️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition est automatique, elle ce valide d'elle même lorsque votre ancienneté dépasse 1 mois (calculer sur la date du /register), un message vous sera par ailleurs également envoyé")
             if payload.emoji.name == "4️⃣":
-                await message.reply(f"__La condition de rank **Contribution économique** (réaction 4️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition doit être valider manuellement. Pour passer Membre, nous demander a toute les Recrues confirmé une donation de 15.000$ au pays. Pour la faire, executez la commande __/econ bank deposite guyana 15000__ pour mettre de l'argent dans la banque de la guyana. Un message apparaitra alors dans le chat globale, prenez le alors en photo (double F2 de préférence) et envoyez le dans <#1019966582652416000>, un officier s'occupera alors d'actualiser le montant total de vos donations.\n \n*PS: Vous n'êtes pas obliger de déposer 15.000$ d'un coup, le bot est en mesure de vous dire quel quantité il vous reste a donner. Dans la même logique, vous pouvez donner plus et cela sera pris en compte pour la même condition du passage de Membre à Membre confirmé*")
+                await message.reply(f"__La condition de rank **Contribution économique** (réaction 4️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition doit être valider manuellement. Pour passer Membre, nous demander a toute les Recrues confirmé une donation de 15.000$ au pays. Pour la faire, executez la commande __/econ bank deposite guyana 15000__ pour mettre de l'argent dans la banque de la guyana. Un message apparaitra alors dans le chat globale, prenez le alors en photo (double F2 de préférence) et envoyez le dans <#1019966582652416000>, un Officier s'occupera alors d'actualiser le montant total de vos donations.\n \n*PS: Vous n'êtes pas obliger de déposer 15.000$ d'un coup, le bot est en mesure de vous dire quel quantité il vous reste a donner. Dans la même logique, vous pouvez donner plus et cela sera pris en compte pour la même condition du passage de Membre à Membre confirmé*")
             if payload.emoji.name == "5️⃣":
-                await message.reply(f"__La condition de rank **Contribution de build** (réaction 5️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition doit être valider manuellement. Dans le pôle build, vous trouverez un fils \"__Accès__\" pour participer au différents projets de constructions de la guyana, et signalé lorsque vous avez finit. Un officier s'occupera alors d'actualiser le total de vos aide au build en guyana.\n \n*PS: Le bot est en mesure de vous dire sur combien de chantier vous avez participer. Vous pouvez donc a participate a plus qu'indiquer et cela sera pris en compte pour la même condition du passage de Membre à Membre confirmé*")
+                await message.reply(f"__La condition de rank **Contribution de build** (réaction 5️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition doit être valider manuellement. Dans le pôle build, vous trouverez un fils \"__Accès__\" pour participer au différents projets de constructions de la guyana, et signalé lorsque vous avez finit. Un Officier s'occupera alors d'actualiser le total de vos aide au build en guyana.\n \n*PS: Le bot est en mesure de vous dire sur combien de chantier vous avez participer. Vous pouvez donc a participate a plus qu'indiquer et cela sera pris en compte pour la même condition du passage de Membre à Membre confirmé*")
             if payload.emoji.name == "6️⃣":
                 await message.reply(f"__La condition de rank **Participation a une activité** (réaction 6️⃣) :__ *demander par {payload.member.mention}*\n \nPour passer Membre, nous vous demandons d'avoir participer au moins une fois a une animation organiser par le pôle animateur. Le planning est envoyer dans le <#895676485598347305>. N'oublier pas de demander au animateur de valider votre participation à la fin de l'event (une seul fois est suffisante, ce n'est pas cumulable)")
 
@@ -346,9 +346,9 @@ class Rank(commands.Cog):
             if payload.emoji.name == "1️⃣":
                 await message.reply(f"__La condition de rank **Ancienneté** (réaction 1️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition est automatique, elle ce valide d'elle même lorsque votre ancienneté dépasse 3 mois (calculer sur la date du /register), un message vous sera par ailleurs également envoyé")
             if payload.emoji.name == "2️⃣":
-                await message.reply(f"__La condition de rank **Contribution économique** (réaction 2️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition doit être valider manuellement. Pour passer Membre confirmé, nous demander a toute les Recrues confirmé une donation de 50.000$ au pays. Pour la faire, executez la commande __/econ bank deposite guyana 50000__ pour mettre de l'argent dans la banque de la guyana. Un message apparaitra alors dans le chat globale, prenez le alors en photo (double F2 de préférence) et envoyez le dans <#1019966582652416000>, un officier s'occupera alors d'actualiser le montant total de vos donations.\n \n*PS: Vous n'êtes pas obliger de déposer 15.000$ d'un coup, le bot est en mesure de vous dire quel quantité il vous reste a donner.*")
+                await message.reply(f"__La condition de rank **Contribution économique** (réaction 2️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition doit être valider manuellement. Pour passer Membre confirmé, nous demander a toute les Recrues confirmé une donation de 50.000$ au pays. Pour la faire, executez la commande __/econ bank deposite guyana 50000__ pour mettre de l'argent dans la banque de la guyana. Un message apparaitra alors dans le chat globale, prenez le alors en photo (double F2 de préférence) et envoyez le dans <#1019966582652416000>, un Officier s'occupera alors d'actualiser le montant total de vos donations.\n \n*PS: Vous n'êtes pas obliger de déposer 15.000$ d'un coup, le bot est en mesure de vous dire quel quantité il vous reste a donner.*")
             if payload.emoji.name == "3️⃣":
-                await message.reply(f"__La condition de rank **Contribution de build** (réaction 3️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition doit être valider manuellement. Dans le pôle build, vous trouverez un fils \"__Accès__\" pour participer au différents projets de constructions de la guyana, et signalé lorsque vous avez finit. Un officier s'occupera alors d'actualiser le total de vos aide au build en guyana.\n \n*PS: Le bot est en mesure de vous dire sur combien de chantier vous avez participer.*")
+                await message.reply(f"__La condition de rank **Contribution de build** (réaction 3️⃣) :__ *demander par {payload.member.mention}*\n \nCette condition doit être valider manuellement. Dans le pôle build, vous trouverez un fils \"__Accès__\" pour participer au différents projets de constructions de la guyana, et signalé lorsque vous avez finit. Un Officier s'occupera alors d'actualiser le total de vos aide au build en guyana.\n \n*PS: Le bot est en mesure de vous dire sur combien de chantier vous avez participer.*")
             if payload.emoji.name == "4️⃣":
                 await message.reply(f"__La condition de rank **Gestion de build** (réaction 4️⃣) :__ *demander par {payload.member.mention}*\n \nPour valider cette condition, vous devez candidater et devenir Builder ou Architecte via le <#1019843946593140787>")
             if payload.emoji.name == "5️⃣":
@@ -387,7 +387,7 @@ class Rank(commands.Cog):
         if data == 1:
             await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["recrue_confirme"]))
             await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["nouvelle_recrue"]))
-            await ctx.respond(f"{user.mention} est passé recrue confirmé")
+            await ctx.respond(f"{user.mention} est passé Recrue confirmé")
             await channel_gg.send(f"Félicitaion à {user.mention} qui passe Recrue confirmé. 🎉")
             cur.execute("UPDATE recrutement SET grade = 2 WHERE id_discord=?", [user.id])
             grade = "Recrue+"
@@ -405,13 +405,16 @@ class Rank(commands.Cog):
             grade = "Membre+"
         elif data == 4:
             if not ctx.user.get_role(config["roles"]["gouverneur"]) and not ctx.user.get_role(config["roles"]["gouverneur_sec"]):
-                await ctx.respond("Seul un gouverneur ou le leader peu rank un membre confirmé officier.")
+                await ctx.respond("Seul un gouverneur ou le leader peu rank un membre confirmé Officier.")
                 return
             else:
                 await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["officier_prim"]))
-                await member_secondary_guild.add_roles(secondary_guild.get_role(config["roles"]["officier_sec"]))
+                try:
+                    await member_secondary_guild.add_roles(secondary_guild.get_role(config["roles"]["officier_sec"]))
+                except AttributeError:
+                    pass
                 await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["deco_hauts_grade"]))
-                await ctx.respond(f"{user.mention} est passé officier")
+                await ctx.respond(f"{user.mention} est passé Officier")
                 await channel_gg.send(f"Félicitaion à {user.mention} qui passe Officier. 🎉")
                 cur.execute("UPDATE recrutement SET grade = 5 WHERE id_discord=?", [user.id])
                 grade = "Officier"
@@ -420,9 +423,9 @@ class Rank(commands.Cog):
                 await ctx.respond("Seul le leader pour ajouté de nouveau gouverneurs <3")
                 return
             else:
-                await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["gouverneur"]))
+                await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["Gouverneur"]))
                 await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["deco_dieu"]))
-                await ctx.respond(f"{user.mention} est passé gouverneur")
+                await ctx.respond(f"{user.mention} est passé Gouverneur")
                 await channel_gg.send(f"Félicitaion à {user.mention} qui passe Gouverneur. 🎉")
                 cur.execute("UPDATE recrutement SET grade = 6 WHERE id_discord=?", [user.id])
                 grade = "Gouverneur"
@@ -432,7 +435,10 @@ class Rank(commands.Cog):
         ig_name = cur.execute("SELECT pseudo_ingame FROM recrutement WHERE id_discord=?", [user.id]).fetchone()
         try:
             await member_principal_guild.edit(nick=f"{grade} | {ig_name[0]}")
-            await member_secondary_guild.edit(nick=f"{grade} | {ig_name[0]}")
+            try:
+                await member_secondary_guild.edit(nick=f"{grade} | {ig_name[0]}")
+            except AttributeError:
+                pass
         except discord.errors.Forbidden:
             pass
         self.bot.db.commit()
@@ -475,12 +481,15 @@ class Rank(commands.Cog):
             cur.execute("UPDATE recrutement SET grade = 3 WHERE id_discord=?", [user.id])
             grade = "Membre"
         elif data == 5:
-            if not ctx.user.get_role(config["roles"]["gouverneur"]) and not ctx.user.get_role(config["roles"]["gouverneur_sec"]):
-                await ctx.respond("Seul un gouverneur ou le leader peu unrank un officier membre confirmé .")
+            if not ctx.user.get_role(config["roles"]["Gouverneur"]) and not ctx.user.get_role(config["roles"]["gouverneur_sec"]):
+                await ctx.respond("Seul un Gouverneur ou le leader peu unrank un Officier membre confirmé .")
                 return
             else:
                 await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["officier_prim"]))
-                await member_secondary_guild.remove_roles(secondary_guild.get_role(config["roles"]["officier_sec"]))
+                try:
+                    await member_secondary_guild.remove_roles(secondary_guild.get_role(config["roles"]["officier_sec"]))
+                except AttributeError:
+                    pass
                 await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["deco_hauts_grade"]))
                 await ctx.respond(f"{user.mention} est passé Membre confirmé")
                 cur.execute("UPDATE recrutement SET grade = 4 WHERE id_discord=?", [user.id])
@@ -490,7 +499,7 @@ class Rank(commands.Cog):
                 await ctx.respond("Seul le leader pour unrank les officiers")
                 return
             else:
-                await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["gouverneur"]))
+                await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["Gouverneur"]))
                 await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["deco_dieu"]))
                 await ctx.respond(f"{user.mention} est passé Officier")
                 cur.execute("UPDATE recrutement SET grade = 5 WHERE id_discord=?", [user.id])
@@ -501,10 +510,12 @@ class Rank(commands.Cog):
         ig_name = cur.execute("SELECT pseudo_ingame FROM recrutement WHERE id_discord=?", [user.id]).fetchone()
         try:
             await member_principal_guild.edit(nick=f"{grade} | {ig_name[0]}")
-            await member_secondary_guild.edit(nick=f"{grade} | {ig_name[0]}")
+            try:
+                await member_secondary_guild.edit(nick=f"{grade} | {ig_name[0]}")
+            except AttributeError:
+                pass
         except discord.errors.Forbidden:
             pass
-        cur.execute("UPDATE recrutement SET grade = grade-1 WHERE id_discord=?", [user.id])
         self.bot.db.commit()
         cur.close()
 
@@ -530,7 +541,7 @@ class Rank(commands.Cog):
                 cur.execute("UPDATE recrutement SET donations = donations+? WHERE id_discord=?", [valeur, user.id])
                 await ctx.respond(f"Les donations de {user.mention} a bien été validé")
             else:
-                await ctx.respond(f"Seul un officier peu effectué cette validation")
+                await ctx.respond(f"Seul un Officier peu effectué cette validation")
 
         elif donnees == "constructions":
             if member_principal_guild.get_role(config["roles"]["architecte"]):
@@ -544,7 +555,7 @@ class Rank(commands.Cog):
                 cur.execute("UPDATE recrutement SET double_compte = double_compte+? WHERE id_discord=?", [valeur, user.id])
                 await ctx.respond(f"Le statut des doubles comptes de {user.mention} a bien été validé")
             else:
-                await ctx.respond(f"Seul un officier peu effectué cette validation")
+                await ctx.respond(f"Seul un Officier peu effectué cette validation")
 
         elif donnees == "participation animation":
             if member_principal_guild.get_role(config["roles"]["animateur"]):
