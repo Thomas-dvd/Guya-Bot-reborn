@@ -161,36 +161,41 @@ class Debug(commands.Cog):
             with tqdm(total=data_number, unit="member", ascii="⬡⬢", bar_format='{l_bar}{bar:25}{r_bar}{bar:-10b}', desc="Force check en cours ") as line1:
                 message = await ctx.send(line1)
                 for i in range(0, data_number, NOMBRE_MEMBRE_PAR_STEP):
-                    cur.execute("SELECT * FROM recrutement ORDER BY id LIMIT " + str(NOMBRE_MEMBRE_PAR_STEP) + " OFFSET ?", [i])
-                    count = 0
-                    for temp in cur:
-                        count += 1
-                        if temp is not None:
-                            bdd_data = {
-                                "id": temp[0],
-                                "id_discord": temp[1],
-                                "pseudo_ingame": temp[2],
-                                "grade": temp[5],
-                                "pays": temp[6],
-                                "date_recrutement": temp[7],
-                                "has_done_player_info": temp[8],
-                                "statut_maison": temp[9],
-                                "donations": temp[10],
-                                "constructions": temp[11],
-                                "double_compte": temp[12],
-                                "participation_animation": temp[13],
-                                "creer_animation": temp[14],
-                                "nb_recrutement": temp[15],
-                                "absence_fin": temp[16],
-                                "last_connection": temp[17],
-                                "anciennete": temp[18],
-                                "schematique": temp[19],
-                                "peut_quitter_pays": temp[20]
-                            }
-                            aaron_data = self.bot.aaron.get_user(bdd_data["pseudo_ingame"])
-                            await self.force_check_user(bdd_data, aaron_data)
-                    line1.update(count)
-                    await message.edit(content=line1)
+                    try:
+                        cur.execute("SELECT * FROM recrutement ORDER BY id LIMIT " + str(NOMBRE_MEMBRE_PAR_STEP) + " OFFSET ?", [i])
+                        count = 0
+                        for temp in cur:
+                            count += 1
+                            if temp is not None:
+                                bdd_data = {
+                                    "id": temp[0],
+                                    "id_discord": temp[1],
+                                    "pseudo_ingame": temp[2],
+                                    "grade": temp[5],
+                                    "pays": temp[6],
+                                    "date_recrutement": temp[7],
+                                    "has_done_player_info": temp[8],
+                                    "statut_maison": temp[9],
+                                    "donations": temp[10],
+                                    "constructions": temp[11],
+                                    "double_compte": temp[12],
+                                    "participation_animation": temp[13],
+                                    "creer_animation": temp[14],
+                                    "nb_recrutement": temp[15],
+                                    "absence_fin": temp[16],
+                                    "last_connection": temp[17],
+                                    "anciennete": temp[18],
+                                    "schematique": temp[19],
+                                    "peut_quitter_pays": temp[20]
+                                }
+                                aaron_data = self.bot.aaron.get_user(bdd_data["pseudo_ingame"])
+                                await self.force_check_user(bdd_data, aaron_data)
+                        line1.update(count)
+                        await message.edit(content=line1)
+                    except Exception as e:
+                        principal_guild = self.bot.get_guild(config["principal_guild_id"])
+                        bot_channel = principal_guild.get_channel(config["channels"]["bot_data_channel"])
+                        await bot_channel.send(f"Erreur total sur l'utilisateur {bdd_data['pseudo_ingame']}. Joueur non reconnue par Aaron")
 
             cur.close()
             await ctx.send("Force check général terminé")

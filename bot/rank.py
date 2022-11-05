@@ -583,9 +583,8 @@ class Rank(commands.Cog):
 
     # Command /absence
     @commands.slash_command(description="Donne toute les informations publique sur une personne")
-    async def absence(self, ctx: discord.ApplicationContext, fin: Option(str, "Entre une date de fin", required=True)):
+    async def absence(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur."), fin: Option(str, "Entre une date de fin", required=True)):
 
-        user = ctx.user
         try:
             fin = date.fromisoformat(fin)
         except ValueError:
@@ -595,4 +594,4 @@ class Rank(commands.Cog):
         cur.execute("UPDATE recrutement SET absence_fin = ? WHERE id_discord=?", [fin, user.id])
         self.bot.db.commit()
 
-        await ctx.respond(f"Ton absence jusqu'au {fin} a bien été enregistrer")
+        await ctx.respond(f"L'absence de {user.mention} jusqu'au {fin} a bien été enregistrer")
