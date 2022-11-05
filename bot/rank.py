@@ -582,7 +582,8 @@ class Rank(commands.Cog):
         cur.close()
 
     # Command /absence
-    @commands.slash_command(description="Donne toute les informations publique sur une personne")
+    @commands.slash_command(description="Pour noté l'absence de quelqu'un")
+    @commands.has_any_role(config["roles"]["recruteur_prim"], config["roles"]["recruteur_sec"])
     async def absence(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur."), fin: Option(str, "Entre une date de fin", required=True)):
 
         try:
