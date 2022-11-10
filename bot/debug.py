@@ -153,6 +153,13 @@ class Debug(commands.Cog):
             await self.force_check_user(bdd_data, aaron_data)
             await ctx.respond(f"ForceCheck sur le joueur {user.mention} lancé !")
         else:
+            # anti-archivage
+            principal_guild = self.bot.get_guild(config["principal_guild_id"])
+            for fil in config["channels"]["no_achievable_fils"]:
+                channel = principal_guild.get_channel_or_thread(fil)
+                await channel.send("anti-archivage", delete_after=0)
+
+            # force-check
             await ctx.respond(f"ForceCheck général lancé !")
             cur = self.bot.db.cursor()
             cur.execute("SELECT count(*) FROM recrutement")
