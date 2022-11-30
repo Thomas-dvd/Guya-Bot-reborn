@@ -11,7 +11,7 @@ Img8 = Image.open('img8.png')
 
 vect_image=[Img1, Img2, Img3, Img4, Img5, Img6, Img7, Img8]
 
-def merge_image(img_vector, image_size):
+def merge_image(img_vector, image_size = 256):
 
     if len(img_vector) == 0:
         return
@@ -25,4 +25,4 @@ def merge_image(img_vector, image_size):
 
     res_image.save("new_image.jpg","JPEG")
 
-merge_image(vect_image, 256)
+merge_image(vect_image)
