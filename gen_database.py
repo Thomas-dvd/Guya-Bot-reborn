@@ -13,7 +13,7 @@
 # 	"constructions"	INTEGER NOT NULL DEFAULT 0,
 # 	"double_compte"	INTEGER NOT NULL DEFAULT 0,
 # 	"participation_animation"	INTEGER NOT NULL DEFAULT 0,
-# 	"creer_animation"	INTEGER NOT NULL DEFAULT 0,
+# 	"<creer_animation"	INTEGER NOT NULL DEFAULT 0,
 # 	"nb_recrutement"	INTEGER NOT NULL DEFAULT 0,
 # 	"absence_fin"	TEXT,
 # 	"last_connection"	INTEGER NOT NULL DEFAULT 0,

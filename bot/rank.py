@@ -1,5 +1,9 @@
 import json
 from datetime import date, timedelta
+from PIL import Image
+from discord.ui import Modal, InputText, View, Button
+
+from Merge_Pictures import merge_image
 
 import discord
 from discord import Option, Color
@@ -7,6 +11,27 @@ from discord.ext import commands
 
 import utils
 from main import GuyaBot
+
+Admin0 = Image.open('images/Administrateur0.png')
+Admin1 = Image.open('images/Administrateur1.png')
+Anim0 = Image.open('images/Animateur0.png')
+Anim1 = Image.open('images/Animateur1.png')
+Anim2 = Image.open('images/Animateur2.png')
+Build0 = Image.open('images/Builder0.png')
+Build1 = Image.open('images/Builder1.png')
+Build2 = Image.open('images/Builder2.png')
+Build3 = Image.open('images/Builder3.png')
+Farm0 = Image.open('images/Farmer0.png')
+Farm1 = Image.open('images/Farmer1.png')
+Farm2 = Image.open('images/Farmer2.png')
+Farm3 = Image.open('images/Farmer3.png')
+Journ0 = Image.open('images/Journaliste0.png')
+Journ1 = Image.open('images/Journaliste1.png')
+Rec0 = Image.open('images/Recruteur0.png')
+Rec1 = Image.open('images/Recruteur1.png')
+Rec2 = Image.open('images/Recruteur2.png')
+default = Image.open('images/default.png')
+
 
 with open("config.json", encoding="utf-8") as f:
     config = json.load(f)
@@ -17,283 +42,598 @@ def setup(bot):
     bot.add_cog(Rank(bot))
 
 
+def player_info_main_part(bot, user, ctx):
+    cur = bot.db.cursor()
+    cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [user.id])
+    temp = cur.fetchone()
+    if temp is None:
+        return None
+
+    data = {
+        "id_sys": temp[0],
+        "id_discord": temp[1],
+        "pseudo_ingame": temp[2],
+        "annee_naissance": temp[3],
+        "experience": temp[4],
+        "grade": temp[5],
+        "pays": temp[6],
+        "peut_quitter_pays": temp[7],
+        "date_recrutement": temp[8],
+        "anciennete": temp[9],
+        "schematique": temp[10],
+        "last_connection": temp[11],
+        "absence_fin": temp[12],
+        "has_done_player_info": temp[13],
+        "statut_maison": temp[14],
+        "double_compte": temp[15],
+        "soldat": temp[16],
+        "journaliste": temp[17],
+        "recruteur": temp[18],
+        "animateur": temp[19],
+        "joueur": temp[20],
+        "builder": temp[21],
+        "constructeur": temp[22],
+        "directeur": temp[23],
+        "économiste": temp[24],
+        "farmer": temp[25]
+    }
+
+    if data['has_done_player_info'] != 1 and ctx is not None:
+        cur.execute("UPDATE recrutement SET has_done_player_info = 1 WHERE id_discord=?", [ctx.user.id])
+        bot.db.commit()
+
+    jobs = {
+        "MSoldat": -1,
+        "MJournaliste": -1,
+        "MRecruteur": -1,
+        "MAnimateur": -1,
+        "MJoueur": -1,
+        "MBuilder": -1,
+        "MConstructeur": -1,
+        "MDirecteur": -1,
+        "MÉconomiste": -1,
+        "MFarmer": -1,
+
+        "Mnv1": 0,
+        "Mnv2": 0,
+        "Mnv3": 0,
+        "vect_image": []
+    }
+
+    # Setup metiers levels
+    if user.get_role(config["roles"]["jobs"]["soldat"]) is not None:
+        if data['soldat'] == 1:
+            jobs['MSoldat'] = 1
+            jobs['Mnv1'] += 1
+            jobs['vect_image'].append(default)
+        elif data['soldat'] == 2:
+            jobs['MSoldat'] = 2
+            jobs['Mnv1'] += 1
+            jobs['Mnv2'] += 1
+            jobs['vect_image'].append(default)
+        elif data['soldat'] >= 3:
+            jobs['MSoldat'] = 3
+            jobs['Mnv1'] += 1
+            jobs['Mnv2'] += 1
+            jobs['Mnv3'] += 1
+            jobs['vect_image'].append(default)
+        else:
+            jobs['MSoldat'] = 0
+            jobs['vect_image'].append(default)
+    if user.get_role(config["roles"]["jobs"]["journaliste"]) is not None:
+        if data['journaliste'] == 1:
+            jobs['MJournaliste'] = 1
+            jobs['Mnv1'] += 1
+            jobs['vect_image'].append(Journ1)
+        elif data['journaliste'] == 2:
+            jobs['MJournaliste'] = 2
+            jobs['Mnv1'] += 1
+            jobs['Mnv2'] += 1
+            jobs['vect_image'].append(default)
+        elif data['journaliste'] >= 3:
+            jobs['MJournaliste'] = 3
+            jobs['Mnv1'] += 1
+            jobs['Mnv2'] += 1
+            jobs['Mnv3'] += 1
+            jobs['vect_image'].append(default)
+        else:
+            jobs['MJournaliste'] = 0
+            jobs['vect_image'].append(Journ0)
+    if user.get_role(config["roles"]["jobs"]["recruteur"]) is not None:
+        if 13 > data['recruteur'] >= 3:
+            jobs['MRecruteur'] = 1
+            jobs['Mnv1'] += 1
+            jobs['vect_image'].append(Rec1)
+        elif 28 > data['recruteur'] >= 13:
+            jobs['MRecruteur'] = 2
+            jobs['Mnv1'] += 1
+            jobs['Mnv2'] += 1
+            jobs['vect_image'].append(Rec2)
+        elif data['recruteur'] >= 28:
+            jobs['MRecruteur'] = 3
+            jobs['Mnv1'] += 1
+            jobs['Mnv2'] += 1
+            jobs['Mnv3'] += 1
+            jobs['vect_image'].append(default)
+        else:
+            jobs['MRecruteur'] = 0
+            jobs['vect_image'].append(Rec0)
+    if user.get_role(config["roles"]["jobs"]["animateur"]) is not None:
+        if 8 > data['animateur'] >= 3:
+            jobs['MAnimateur'] = 1
+            jobs['Mnv1'] += 1
+            jobs['vect_image'].append(Anim1)
+        elif 18 > data['animateur'] >= 8:
+            jobs['MAnimateur'] = 2
+            jobs['Mnv1'] += 1
+            jobs['Mnv2'] += 1
+            jobs['vect_image'].append(Anim2)
+        elif data['animateur'] >= 18:
+            jobs['MAnimateur'] = 3
+            jobs['Mnv1'] += 1
+            jobs['Mnv2'] += 1
+            jobs['Mnv3'] += 1
+            jobs['vect_image'].append(default)
+        else:
+            jobs['MAnimateur'] = 0
+            jobs['vect_image'].append(Anim0)
+    if user.get_role(config["roles"]["jobs"]["joueur"]) is not None:
+        if 25000 > data['joueur'] >= 10000:
+            jobs['MJoueur'] = 1
+            jobs['Mnv1'] += 1
+            jobs['vect_image'].append(default)
+        elif 50000 > data['joueur'] >= 25000:
+            jobs['MJoueur'] = 2
+            jobs['Mnv1'] += 1
+            jobs['Mnv2'] += 1
+            jobs['vect_image'].append(default)
+        elif data['joueur'] >= 50000:
+            jobs['MJoueur'] = 3
+            jobs['Mnv1'] += 1
+            jobs['Mnv2'] += 1
+            jobs['Mnv3'] += 1
+            jobs['vect_image'].append(default)
+        else:
+            jobs['MJoueur'] = 0
+            jobs['vect_image'].append(default)
+    if user.get_role(config["roles"]["jobs"]["builder"]) is not None:
+        if 6 > data['builder'] >= 1:
+            jobs['MBuilder'] = 1
+            jobs['Mnv1'] += 1
+            jobs['vect_image'].append(Build1)
+        elif 16 > data['builder'] >= 6:
+            jobs['MBuilder'] = 2
+            jobs['Mnv1'] += 1
+            jobs['Mnv2'] += 1
+            jobs['vect_image'].append(Build2)
+        elif data['builder'] >= 16:
+            jobs['MBuilder'] = 3
+            jobs['Mnv1'] += 1
+            jobs['Mnv2'] += 1
+            jobs['Mnv3'] += 1
+            jobs['vect_image'].append(Build3)
+        else:
+            jobs['MBuilder'] = 0
+            jobs['vect_image'].append(Build0)
+    if user.get_role(config["roles"]["jobs"]["constructeur"]) is not None:
+        if 8 > data['constructeur'] >= 3:
+            jobs['MConstructeur'] = 1
+            jobs['Mnv1'] += 1
+            jobs['vect_image'].append(default)
+        elif 23 > data['constructeur'] >= 8:
+            jobs['MConstructeur'] = 2
+            jobs['Mnv1'] += 1
+            jobs['Mnv2'] += 1
+            jobs['vect_image'].append(default)
+        elif data['constructeur'] >= 23:
+            jobs['MConstructeur'] = 3
+            jobs['Mnv1'] += 1
+            jobs['Mnv2'] += 1
+            jobs['Mnv3'] += 1
+            jobs['vect_image'].append(default)
+        else:
+            jobs['MConstructeur'] = 0
+            jobs['vect_image'].append(default)
+    if user.get_role(config["roles"]["jobs"]["directeur"]) is not None:
+        if data['directeur'] == 1:
+            jobs['MDirecteur'] = 1
+            jobs['Mnv1'] += 1
+            jobs['vect_image'].append(default)
+        elif data['directeur'] == 2:
+            jobs['MDirecteur'] = 2
+            jobs['Mnv1'] += 1
+            jobs['Mnv2'] += 1
+            jobs['vect_image'].append(default)
+        elif data['directeur'] >= 3:
+            jobs['MDirecteur'] = 3
+            jobs['Mnv1'] += 1
+            jobs['Mnv2'] += 1
+            jobs['Mnv3'] += 1
+            jobs['vect_image'].append(default)
+        else:
+            jobs['MDirecteur'] = 0
+            jobs['vect_image'].append(default)
+    if user.get_role(config["roles"]["jobs"]["économiste"]) is not None:
+        if data['économiste'] == 1:
+            jobs['MÉconomiste'] = 1
+            jobs['Mnv1'] += 1
+            jobs['vect_image'].append(default)
+        elif data['économiste'] == 2:
+            jobs['MÉconomiste'] = 2
+            jobs['Mnv1'] += 1
+            jobs['Mnv2'] += 1
+            jobs['vect_image'].append(default)
+        elif data['économiste'] >= 3:
+            jobs['MÉconomiste'] = 3
+            jobs['Mnv1'] += 1
+            jobs['Mnv2'] += 1
+            jobs['Mnv3'] += 1
+            jobs['vect_image'].append(default)
+        else:
+            jobs['MÉconomiste'] = 0
+            jobs['vect_image'].append(default)
+    if user.get_role(config["roles"]["jobs"]["farmer"]) is not None:
+        if 20000 > data['farmer'] >= 5000:
+            jobs['MFarmer'] = 1
+            jobs['Mnv1'] += 1
+            jobs['vect_image'].append(default)
+        elif 70000 > data['farmer'] >= 20000:
+            jobs['MFarmer'] = 2
+            jobs['Mnv1'] += 1
+            jobs['Mnv2'] += 1
+            jobs['vect_image'].append(default)
+        elif data['farmer'] >= 70000:
+            jobs['MFarmer'] = 3
+            jobs['Mnv1'] += 1
+            jobs['Mnv2'] += 1
+            jobs['Mnv3'] += 1
+            jobs['vect_image'].append(default)
+        else:
+            jobs['MFarmer'] = 0
+            jobs['vect_image'].append(default)
+
+    embed = utils.create_embed(bot, f"Stats de {user}")
+    embed.add_field(name="Nom en jeu :", value=f"{data['pseudo_ingame']}")
+    embed.add_field(name="ID système :", value=f"{data['id_sys']}")
+    embed.add_field(name="Pays :", value=f"{data['pays']}")
+    embed.add_field(name="Dernière connexion :", value=f"{data['last_connection']}")
+    embed.add_field(name="Date de recrutement :", value=f"{data['date_recrutement']}")
+    embed.add_field(name="Schematic :", value=f"[{data['schematique']}]({config['schematics'][data['schematique']] if data['schematique'] in config['schematics'] else 'https://www.youtube.com/c/Tominix356?sub_confirmation=1'})")
+
+    if data["grade"] == 0:  # Candidat
+        embed.add_field(name="Grade :", value="Candidat")
+    elif data["grade"] == 1:  # Nouvelle recrue
+        embed.add_field(name="Grade :", value="Nouvelle recrue")
+    elif data["grade"] == 2:  # Recrue confirmé
+        embed.add_field(name="Grade :", value="Recrue confirmé")
+    elif data["grade"] == 3:  # Membre
+        embed.add_field(name="Grade :", value="Membre")
+    elif data["grade"] == 4:  # Membre confirmé
+        embed.add_field(name="Grade :", value="Membre confirmé")
+    elif data["grade"] == 5:  # Officier
+        embed.add_field(name="Grade :", value="Officier")
+    elif data["grade"] == 6:  # Gouverneur
+        embed.add_field(name="Grade :", value="Gouverneur")
+    elif data["grade"] == 7:  # Leader
+        embed.add_field(name="Grade :", value="Leader")
+
+    return embed, jobs, data
+
+
+def player_info_rank_part(data, embed, jobs):
+    text = ""
+    if data["grade"] == 0:  # Candidat
+        text += "Tu doit finir ton recrutement"
+
+    elif data["grade"] == 1:  # Nouvelle recrue
+
+        if data["pays"] in config["list_pays"]:
+            text += f"__Pays :__ ✅\n"
+        else:
+            text += f"__Pays :__ ❌ Tu doit encore rejoindre le pays. 1️⃣\n"
+        if data["statut_maison"] >= 1:
+            text += "__Maison :__ ✅\n"
+        else:
+            text += f"__Maison :__ ❌ Tu doit encore finir ta maison. 2️⃣\n"
+        if data["anciennete"] >= 1:
+            text += "__Ancienneté :__ ✅\n"
+        else:
+            text += "__Ancienneté :__ ❌ Tu doit avoir une semaine d'ancienneté. 3️⃣\n"
+        if data["has_done_player_info"] == 1:
+            text += "__Utilisation du bot :__ ✅\n"
+        else:
+            text += f"__Utilisation du bot :__ ❌ Tu doit t'être renseigné au moins une fois sur tes conditions de rank. 4️⃣\n"
+        if jobs['Mnv1'] >= 1:
+            text += f"__Métiers :__ ✅\n"
+        else:
+            text += f"__Métiers :__ ❌ Tu doit avoir : un métier *Nv.1* ({jobs['Mnv1']}/1 Nv.1).\n"
+
+    elif data["grade"] == 2:  # Recrue confirmé
+
+        if data["statut_maison"] >= 2:
+            text += "__Maison :__ ✅\n"
+        else:
+            text += f"__Maison :__ ❌ Tu doit encore finir ta maison de membre. 1️⃣\n"
+        if data["double_compte"] >= 1:
+            text += "__Double compte :__ ✅\n"
+        else:
+            text += f"__Double compte :__ ❌ Tu doit mettre un DC dans le trinité-et-tobago. 2️⃣\n"
+        if data["anciennete"] >= 2:
+            text += "__Ancienneté :__ ✅\n"
+        else:
+            text += "__Ancienneté :__ ❌ Tu doit avoir un mois d'ancienneté. 3️⃣\n"
+        if jobs['Mnv2'] >= 2 or (jobs['Mnv1'] >= 3 and jobs['Mnv2'] >= 1):
+            text += f"__Métiers :__ ✅\n"
+        else:
+            text += f"__Métiers :__ ❌ Tu doit avoir : deux métier *Nv.2* ({jobs['Mnv2']}/2 Nv.2) __ou__ un métier *Nv.2* et deux métier *Nv.1* ({jobs['Mnv2']}/1 Nv.2, {jobs['Mnv1'] - 1}/2 Nv.1).\n"
+
+    elif data["grade"] == 3:  # Membre
+
+        if data["anciennete"] == 3:
+            text += "__Ancienneté :__ ✅\n\n"
+        else:
+            text += "__Ancienneté :__ ❌ Tu doit avoir 3 mois d'ancienneté. 1️⃣\n"
+        if jobs['Mnv3'] >= 2 or jobs['Mnv2'] >= 3:
+            text += f"__Métiers :__ ✅ ({jobs['Mnv2']}/1) ({jobs['Mnv1']}/2)\n"
+        else:
+            text += f"__Métiers :__ ❌ Tu doit avoir : deux métier *Nv.3* ({jobs['Mnv3']}/2) __ou__ trois métier *Nv.2* ({jobs['Mnv2']}/3).\n"
+
+    elif data["grade"] == 4:  # Membre confirmé
+        text += "*Soon...*\n Dans l'attente de l'arriver des conditions, pour continuer à progresser dans le pays, il n'y a plus de conditions de rank précises. C'est basé sur votre implication dans le pays"
+
+    elif data["grade"] == 5:  # Officier
+        text += "Il n'y a plus de conditions de rank précises. C'est basé sur votre implication dans le pays"
+
+    elif data["grade"] == 6:  # Gouverneur
+        text += "Le grade de leader n'est pas négotiable"
+
+    elif data["grade"] == 7:  # Leader
+        text += "Oui alors... Que dire ici... En soit on dit que la vie c'est de ne jamais arrêter d'apprendre, donc on peu toujours s'élever nan ? Bon ca répond pas la question... Que dire ici ? On a qu'a dire que c'est un easter egg. Ouais c'est une bonne idée, donc \"Ouais GG t'a trouver un easter egg !\" Voila, c'est tout, donc retourne bossé maintenant au lieu de lire ce genre de message"
+
+    embed.add_field(name="}==============={ Condition de rank }==============={", value=f"{text}", inline=False)
+
+    return embed
+
+
+def player_info_jobs_part(embed, jobs, selected_job, data):
+    text = ""
+    can_join = 0
+    if selected_job == 1:   # Soldat
+        metier_name = "Soldat"
+        embed.color = Color.default()
+        if jobs['MSoldat'] == -1:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de soldat, du pôle __pvp__ ⬛ consiste a protéger la faction de toute menace, par la force, l'intelligence et la discipline, mais surtout l'amour de la patrie.*\n\n**Condition pour rejoindre : **\nConditions a venir"
+            can_join = 2
+        elif jobs['MSoldat'] == 0:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de soldat, du pôle __pvp__ ⬛ consiste a protéger la faction de toute menace, par la force, l'intelligence et la discipline, mais surtout l'amour de la patrie.*\n\n**Level actuel :** {config['emoji_0']}\n\n**Level suivant : **\nConditions a venir"
+            can_join = 2
+        elif jobs['MSoldat'] == 1:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de soldat, du pôle __pvp__ ⬛ consiste a protéger la faction de toute menace, par la force, l'intelligence et la discipline, mais surtout l'amour de la patrie.*\n\n**Level actuel :** {config['emoji_1']}\n\n**Level suivant : **\nConditions a venir"
+            can_join = 2
+        elif jobs['MSoldat'] == 2:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de soldat, du pôle __pvp__ ⬛ consiste a protéger la faction de toute menace, par la force, l'intelligence et la discipline, mais surtout l'amour de la patrie.*\n\n**Level actuel :** {config['emoji_2']}\n\n**Level suivant : **\nConditions a venir"
+            can_join = 2
+        elif jobs['MSoldat'] == 3:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de soldat, du pôle __pvp__ ⬛ consiste a protéger la faction de toute menace, par la force, l'intelligence et la discipline, mais surtout l'amour de la patrie.*\n\n**Level actuel :** {config['emoji_3']}\n\n**Level suivant : **\nConditions a venir"
+            can_join = 2
+
+    if selected_job == 2:   # Journaliste
+        metier_name = "Journaliste"
+        embed.color = Color.blue()
+        if jobs['MJournaliste'] == -1:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de journaliste, du pôle __journal__ 🟦 consiste a gérer l'écriture de scripte, leurs enregistrements, leurs montage dans des vidéos qui sont par la suite diffusée sur youtube.*\n\n**Condition pour rejoindre : **\nConditions a venir"
+            can_join = 2
+        if jobs['MJournaliste'] == 0:
+            embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/962037953314578482/1050905037272002570/Journaliste0.png")
+            text += f"*Le métier de journaliste, du pôle __journal__ 🟦 consiste a gérer l'écriture de scripte, leurs enregistrements, leurs montage dans des vidéos qui sont par la suite diffusée sur youtube.*\n\n**Level actuel :** {config['emoji_0']}\n\n**Level suivant : **\nConditions a venir"
+            can_join = 2
+        elif jobs['MJournaliste'] == 1:
+            embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/962037953314578482/1050905037666254938/Journaliste1.png")
+            text += f"*Le métier de journaliste, du pôle __journal__ 🟦 consiste a gérer l'écriture de scripte, leurs enregistrements, leurs montage dans des vidéos qui sont par la suite diffusée sur youtube.*\n\n**Level actuel :** {config['emoji_1']}\n\n**Level suivant : **\nConditions a venir"
+            can_join = 2
+        elif jobs['MJournaliste'] == 2:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de journaliste, du pôle __journal__ 🟦 consiste a gérer l'écriture de scripte, leurs enregistrements, leurs montage dans des vidéos qui sont par la suite diffusée sur youtube.*\n\n**Level actuel :** {config['emoji_2']}\n\n**Level suivant : **\nConditions a venir"
+            can_join = 2
+        elif jobs['MJournaliste'] == 3:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de journaliste, du pôle __journal__ 🟦 consiste a gérer l'écriture de scripte, leurs enregistrements, leurs montage dans des vidéos qui sont par la suite diffusée sur youtube.*\n\n**Level actuel :** {config['emoji_3']}\n\n**Level suivant : **\nConditions a venir"
+            can_join = 2
+
+    if selected_job == 3:   # Recruteur
+        metier_name = "Recruteur"
+        embed.color = Color.purple()
+        if jobs['MRecruteur'] == -1:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de recruteur, du pôle __recrutement__ 🟪 consiste a accueillir les nouveaux arrivants, les formés et s'assurée de leurs intégration dans le pays.*\n\n**Condition pour rejoindre : **\n- Savoir parler en vocal de manière convaincu, chaleureuse, accueillante, ne pas être timide\n- Être au minimum <@&{config['roles']['grades']['membre']}>"
+            if data['grade'] >= 3:
+                can_join = 1
+        if jobs['MRecruteur'] == 0:
+            embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/962037953314578482/1050905035103547402/Recruteur0.png")
+            text += f"*Le métier de recruteur, du pôle __recrutement__ 🟪 consiste a accueillir les nouveaux arrivants, les formés et s'assurée de leurs intégration dans le pays.*\n\n**Level actuel :** {config['emoji_0']}\n\n**Level suivant : **\n- Avoir effectuer 3 recrutement ({3-data['recruteur']} restant)"
+        elif jobs['MRecruteur'] == 1:
+            embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/962037953314578482/1050905035543937114/Recruteur1.png")
+            text += f"*Le métier de recruteur, du pôle __recrutement__ 🟪 consiste a accueillir les nouveaux arrivants, les formés et s'assurée de leurs intégration dans le pays.*\n\n**Level actuel :** {config['emoji_1']}\n\n**Level suivant : **\n- Avoir effectuer 10 recrutement ({13-data['recruteur']} restant)"
+        elif jobs['MRecruteur'] == 2:
+            embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/962037953314578482/1050905035862708355/Recruteur2.png")
+            text += f"*Le métier de recruteur, du pôle __recrutement__ 🟪 consiste a accueillir les nouveaux arrivants, les formés et s'assurée de leurs intégration dans le pays.*\n\n**Level actuel :** {config['emoji_2']}\n\n**Level suivant : **\n- Avoir effectuer 15 recrutement ({28-data['recruteur']} restant)"
+        elif jobs['MRecruteur'] == 3:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de recruteur, du pôle __recrutement__ 🟪 consiste a accueillir les nouveaux arrivants, les formés et s'assurée de leurs intégration dans le pays.*\n\n**Level actuel :** {config['emoji_3']}\n\n**Level suivant : **\nConditions a venir"
+
+    if selected_job == 4:   # Animateur
+        metier_name = "Animateur"
+        embed.color = Color.green()
+        if jobs['MAnimateur'] == -1:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier d'animateur, du pôle __animation__ 🟩 consiste a organiser divers event sur des plateformes extérieur a NationsGlory (discord, jeu en ligne, minecraft et bien plus).*\n\n**Condition pour rejoindre : **\n- Motivation\n- Être Joueur {config['emoji_1']}\n- Être au minimum <@&{config['roles']['grades']['recrue_confirme']}>"
+        if jobs['MAnimateur'] == 0:
+            embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/962037953314578482/1050905019160989796/Animateur0.png")
+            text += f"*Le métier d'animateur, du pôle __animation__ 🟩 consiste a organiser divers event sur des plateformes extérieur a NationsGlory (discord, jeu en ligne, minecraft et bien plus).*\n\n**Level actuel :** {config['emoji_0']}\n\n**Level suivant :**\n- Avoir effectuer 3 animations ({3-data['animateur']} restant)"
+        elif jobs['MAnimateur'] == 1:
+            embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/962037953314578482/1050905019475574804/Animateur1.png")
+            text += f"*Le métier d'animateur, du pôle __animation__ 🟩 consiste a organiser divers event sur des plateformes extérieur a NationsGlory (discord, jeu en ligne, minecraft et bien plus).*\n\n**Level actuel :** {config['emoji_1']}\n\n**Level suivant :**\n- Avoir effectuer 5 animations ({8-data['animateur']} restant)"
+        elif jobs['MAnimateur'] == 2:
+            embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/962037953314578482/1050905019773374555/Animateur2.png")
+            text += f"*Le métier d'animateur, du pôle __animation__ 🟩 consiste a organiser divers event sur des plateformes extérieur a NationsGlory (discord, jeu en ligne, minecraft et bien plus).*\n\n**Level actuel :** {config['emoji_2']}\n\n**Level suivant :**\n- Avoir effectuer 10 animations ({18-data['animateur']} restant)"
+        elif jobs['MAnimateur'] == 3:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier d'animateur, du pôle __animation__ 🟩 consiste a organiser divers event sur des plateformes extérieur a NationsGlory (discord, jeu en ligne, minecraft et bien plus).*\n\n**Level actuel :** {config['emoji_3']}\n\n**Level suivant :**\n- Conditions a venir"
+
+    if selected_job == 5:   # Joueur
+        metier_name = "Joueur"
+        embed.color = Color.green()
+        if jobs['MJoueur'] == -1:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de joueur, du pôle __animation__ 🟩 consiste a participer aux events organiser par le pôle. La participation mais aussi les victoires (quand possible) et belle actions, permette d'Up ce métier.*\n\n**Condition pour rejoindre : **\n- Aucunes"
+            can_join = 1
+        if jobs['MJoueur'] == 0:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de joueur, du pôle __animation__ 🟩 consiste a participer aux events organiser par le pôle. La participation mais aussi les victoires (quand possible) et belle actions, permette d'Up ce métier.*\n\n**Level actuel :** {config['emoji_0']}\n\n**Level suivant :**\n- Avoir 10.000pts ({10000-data['joueur']} restant)"
+        elif jobs['MJoueur'] == 1:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de joueur, du pôle __animation__ 🟩 consiste a participer aux events organiser par le pôle. La participation mais aussi les victoires (quand possible) et belle actions, permette d'Up ce métier.*\n\n**Level actuel :** {config['emoji_1']}\n\n**Level suivant :**\n- Avoir 10.000pts ({10000-data['joueur']} restant)"
+        elif jobs['MJoueur'] == 2:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de joueur, du pôle __animation__ 🟩 consiste a participer aux events organiser par le pôle. La participation mais aussi les victoires (quand possible) et belle actions, permette d'Up ce métier.*\n\n**Level actuel :** {config['emoji_2']}\n\n**Level suivant :**\n- Avoir 10.000pts ({10000-data['joueur']} restant)"
+        elif jobs['MJoueur'] == 3:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de joueur, du pôle __animation__ 🟩 consiste a participer aux events organiser par le pôle. La participation mais aussi les victoires (quand possible) et belle actions, permette d'Up ce métier.*\n\n**Level actuel :** {config['emoji_2']}\n\n**Level suivant :**\n- Conditions a venir"
+
+    if selected_job == 6:   # Builder
+        metier_name = "Builder"
+        embed.color = Color.orange()
+        if jobs['MBuilder'] == -1:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de builder, du pôle __build__ 🟦 consiste a réaliser les différents schématiques du pays en créatifs, qui seront ensuite poser InGame par les constructeurs.*\n\n**Condition pour rejoindre : **\n- Maîtriser Schématica et WorldEdit\n- Être motiver\n- Savoir bien build dans le thème de la GDE (et d'une manière général)\n- Être au minimum <@&{config['roles']['grades']['recrue_confirme']}>\n- Être constructeur {config['emoji_1']}"
+            if data['grade'] >= 2:
+                can_join = 1
+        if jobs['MBuilder'] == 0:
+            embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/962037953314578482/1050905020087931010/Builder0.png")
+            text += f"*Le métier de builder, du pôle __build__ 🟦 consiste a réaliser les différents schématiques du pays en créatifs, qui seront ensuite poser InGame par les constructeurs.*\n\n**Level actuel :** {config['emoji_0']}\n\n**Level suivant :**\n- Avoir réaliser 1 construction ({1-data['builder']} restant)"
+        elif jobs['MBuilder'] == 1:
+            embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/962037953314578482/1050905020419293324/Builder1.png")
+            text += f"*Le métier de builder, du pôle __build__ 🟦 consiste a réaliser les différents schématiques du pays en créatifs, qui seront ensuite poser InGame par les constructeurs.*\n\n**Level actuel :** {config['emoji_1']}\n\n**Level suivant :**\n- Avoir réaliser 5 construction ({6-data['builder']} restant)"
+        elif jobs['MBuilder'] == 2:
+            embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/962037953314578482/1050905021631451187/Builder2.png")
+            text += f"*Le métier de builder, du pôle __build__ 🟦 consiste a réaliser les différents schématiques du pays en créatifs, qui seront ensuite poser InGame par les constructeurs.*\n\n**Level actuel :** {config['emoji_2']}\n\n**Level suivant :**\n- Avoir réaliser 10 construction ({16-data['builder']} restant)"
+        elif jobs['MBuilder'] == 3:
+            embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/962037953314578482/1050905021950201866/Builder3.png")
+            text += f"*Le métier de builder, du pôle __build__ 🟦 consiste a réaliser les différents schématiques du pays en créatifs, qui seront ensuite poser InGame par les constructeurs.*\n\n**Level actuel :** {config['emoji_3']}\n\n**Level suivant :**\n- Conditions a venir"
+
+    if selected_job == 7:   # Constructeur
+        metier_name = "Constructeur"
+        embed.color = Color.orange()
+        if jobs['MConstructeur'] == -1:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de constructeur, du pôle __build__ 🟦 consiste a posées les différents schématiques du pays réaliser par les builders.*\n\n**Condition pour rejoindre : **\n- Aucunes"
+            can_join = 1
+        if jobs['MConstructeur'] == 0:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de constructeur, du pôle __build__ 🟦 consiste a posées les différents schématiques du pays réaliser par les builders.*\n\n**Level actuel :** {config['emoji_0']}\n\n**Level suivant :**\n- Avoir contribuer a la pose de 3 construction ({3-data['builder']} restant)"
+        elif jobs['MConstructeur'] == 1:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de constructeur, du pôle __build__ 🟦 consiste a posées les différents schématiques du pays réaliser par les builders.*\n\n**Level actuel :** {config['emoji_1']}\n\n**Level suivant :**\n- Avoir contribuer a la pose de 5 construction ({8-data['builder']} restant)"
+        elif jobs['MConstructeur'] == 2:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de constructeur, du pôle __build__ 🟦 consiste a posées les différents schématiques du pays réaliser par les builders.*\n\n**Level actuel :** {config['emoji_2']}\n\n**Level suivant :**\n- Avoir contribuer a la pose de 15 construction ({23-data['builder']} restant)"
+        elif jobs['MConstructeur'] == 3:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de constructeur, du pôle __build__ 🟦 consiste a posées les différents schématiques du pays réaliser par les builders.*\n\n**Level actuel :** {config['emoji_3']}\n\n**Level suivant :**\n- Conditions a venir"
+
+    if selected_job == 8:   # Directeur
+        metier_name = "Directeur"
+        embed.color = Color.yellow()
+        if jobs['MDirecteur'] == -1:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de directeur, du pôle __économique__ 🟨 consiste a gérer un projet économique qui emploi des membres du pays et permet ainsi de faire tournée l'économie du pays.*\n\n**Condition pour rejoindre : **\n- Être Farmer {config['emoji_2']} __ou__ être Économiste {config['emoji_2']}\n- Être au minimum <@&{config['roles']['grades']['membre']}>"
+            if data['grade'] >= 3:
+                can_join = 1
+        if jobs['MDirecteur'] == 0:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de directeur, du pôle __économique__ 🟨 consiste a gérer un projet économique qui emploi des membres du pays et permet ainsi de faire tournée l'économie du pays.*\n\n**Level actuel :** {config['emoji_0']}\n\n**Level suivant :**\n- Conditions a venir"
+        elif jobs['MDirecteur'] == 1:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de directeur, du pôle __économique__ 🟨 consiste a gérer un projet économique qui emploi des membres du pays et permet ainsi de faire tournée l'économie du pays.*\n\n**Level actuel :** {config['emoji_1']}\n\n**Level suivant :**\n- Conditions a venir"
+        elif jobs['MDirecteur'] == 2:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de directeur, du pôle __économique__ 🟨 consiste a gérer un projet économique qui emploi des membres du pays et permet ainsi de faire tournée l'économie du pays.*\n\n**Level actuel :** {config['emoji_2']}\n\n**Level suivant :**\n- Conditions a venir"
+        elif jobs['MDirecteur'] == 3:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier de directeur, du pôle __économique__ 🟨 consiste a gérer un projet économique qui emploi des membres du pays et permet ainsi de faire tournée l'économie du pays.*\n\n**Level actuel :** {config['emoji_3']}\n\n**Level suivant :**\n- Conditions a venir"
+
+    if selected_job == 9:   # Économiste
+        metier_name = "Économiste"
+        embed.color = Color.yellow()
+        if jobs['MÉconomiste'] == -1:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            text += f"*Le métier d'économiste, du pôle __économique__ 🟨 consiste a crée des tutoriels de farmings sur les ressources rentables du moment et ainsi permettre au joueurs encore novice du pays de farmer efficacement.*\n\n**Condition pour rejoindre : **\n- Être Farmer {config['emoji_1']}\n- Être au minimum <@&{config['roles']['grades']['recrue_confirme']}>"
+            if data['grade'] >= 2:
+                can_join = 1
+        if jobs['MÉconomiste'] == 0:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+        elif jobs['MÉconomiste'] == 1:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+        elif jobs['MÉconomiste'] == 2:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+        elif jobs['MÉconomiste'] == 3:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+
+    if selected_job == 10:   # Farmer
+        metier_name = "Farmer"
+        embed.color = Color.yellow()
+        if jobs['MFarmer'] == -1:
+            embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
+            can_join = 1
+        if jobs['MFarmer'] == 0:
+            embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/962037953314578482/1050905018049515670/Farmer0.png")
+        elif jobs['MFarmer'] == 1:
+            embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/962037953314578482/1050905036173094952/Farmer1.png")
+        elif jobs['MFarmer'] == 2:
+            embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/962037953314578482/1050905036567347210/Farmer2.png")
+        elif jobs['MFarmer'] == 3:
+            embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/962037953314578482/1050905036957421621/Farmer3.png")
+
+    embed.add_field(name=f'{"}"}==============={"{"} Métier : {metier_name} {"}"}==============={"{"}', value=f"{text}", inline=False)
+
+    return embed, can_join
+
+
 class Rank(commands.Cog):
     def __init__(self, bot: GuyaBot):
         self.bot = bot
 
-    # Command /player-info
+    # ------------------------------------------------------------------------------------------
+    #                               Command /player-info
+    # ------------------------------------------------------------------------------------------
+
     @commands.slash_command(name="player-info", description="Donne toute les informations publique sur une personne")
     async def player_info(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=False)):
         if user is None:
             user = ctx.user
 
-        cur = self.bot.db.cursor()
-        cur.execute("UPDATE recrutement SET has_done_player_info = 1 WHERE id_discord=?", [ctx.user.id])
-        self.bot.db.commit()
-        cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [user.id])
-        temp = cur.fetchone()
-        if temp is None:
+        embed = None
+        try:
+            embed, jobs, data = player_info_main_part(self.bot, user, ctx)
+        except TypeError:
+            pass
+        if embed is None:
             await ctx.respond("Utilisateur absent de la base de données")
             return
-        data = {
-            "id": temp[0],
-            "id_discord": user.id,
-            "pseudo_ingame": temp[2],
-            "grade": temp[5],
-            "pays": temp[6],
-            "date_recrutement": temp[7],
-            "has_done_player_info": temp[8],
-            "statut_maison": temp[9],
-            "donations": temp[10],
-            "constructions": temp[11],
-            "double_compte": temp[12],
-            "participation_animation": temp[13],
-            "creer_animation": temp[14],
-            "nb_recrutement": temp[15],
-            "last_connection": temp[17],
-            "anciennete": temp[18],
-            "schematique": temp[19]
-        }
 
-        embed = utils.create_embed(self.bot, f"Stats de {user}")
-        embed.add_field(name="Nom en jeu :", value=f"{data['pseudo_ingame']}")
-        embed.add_field(name="ID système :", value=f"{data['id']}")
-        embed.add_field(name="Pays :", value=f"{data['pays']}")
-        embed.add_field(name="Dernière connexion :", value=f"{data['last_connection']}")
-        embed.add_field(name="Date de recrutement :", value=f"{data['date_recrutement']}")
-        embed.add_field(name="Schematic :",
-                        value=f"[{data['schematique']}]({config['schematics'][data['schematique']] if data['schematique'] in config['schematics'] else 'https://www.youtube.com/c/Tominix356?sub_confirmation=1'})")
-        text = ""
+        embed = player_info_rank_part(data, embed, jobs)
 
-        if data["grade"] == 0:  # Candidat
-            embed.add_field(name="Grade :", value="Candidat")
-
-            text += "Tu doit finir ton recrutement"
-
-        elif data["grade"] == 1:  # Nouvelle recrue
-            embed.add_field(name="Grade :", value="Nouvelle recrue")
-
-            pays = data["pays"] in config["list_pays"]
-            maison = data["statut_maison"] >= 1
-            time = data["anciennete"] >= 1
-            do_player_info = data["has_done_player_info"] == 1
-
-            if maison and time and do_player_info:
-                text += f"**Condition intégration :** ✅\n"
-            else:
-                text += f"**Condition intégration :** ❌\n"
-            if pays:
-                text += f"__Pays :__ ✅\n"
-            else:
-                text += f"__Pays :__ ❌ Tu doit encore rejoindre le pays. 1️⃣\n"
-            if maison:
-                text += "__Maison :__ ✅\n"
-            else:
-                text += f"__Maison :__ ❌ Tu doit encore finir ta maison. 2️⃣\n"
-            if time:
-                text += "__Ancienneté :__ ✅\n"
-            else:
-                text += "__Ancienneté :__ ❌ Tu doit avoir une semaine d'ancienneté. 3️⃣\n"
-            if do_player_info:
-                text += "__Utilisation du bot :__ ✅\n"
-            else:
-                text += f"__Utilisation du bot :__ ❌ Tu doit t'être renseigné au moins une fois sur tes conditions de rank. 4️⃣\n"
-
-            grade_farm = user.get_role(config["roles"]["farmer"]) is not None
-            donation = data["donations"] >= 5000
-
-            if grade_farm and donation:
-                text += f"\n**Pôle économique :** ✅\n"
-            else:
-                text += f"\n**Pôle économique :** ❌\n"
-            if grade_farm:
-                if donation:
-                    text += "__Contribution économique :__ ✅\n"
-                else:
-                    text += f"__Contribution économique :__ ❌ Tu doit encore farmer {5000 - data['donations']}$ pour le pays. 5️⃣\n"
-            else:
-                text += "__Farming :__ ❌ Pour rejoindre le pôle économique, tu doit récupérer le grade @Farmer. 6️⃣\n"
-
-            grade_const = user.get_role(config["roles"]["constructeur"]) is not None
-            projet = data["constructions"] >= 1
-
-            if grade_const and projet:
-                text += f"\n**Pôle build :** ✅\n"
-            else:
-                text += f"\n**Pôle build :** ❌\n"
-            if grade_const:
-                if projet:
-                    text += "__Contribution de build :__ ✅\n"
-                else:
-                    text += f"__Contribution de build :__ ❌ Tu doit participer a encore au moins {1 - data['constructions']} chantier de build. 7️⃣\n"
-            else:
-                text += "__Constructeur :__ ❌ Pour rejoindre le pôle build, tu doit récupérer le grade @Constructeur. 8️⃣\n"
-
-            text += f"\n**Récompense de rank :** Full prototype sombre"
-
-        elif data["grade"] == 2:  # Recrue confirmé
-            embed.add_field(name="Grade :", value="Recrue confirmé")
-
-            maison = data["statut_maison"] >= 2
-            double_compte = data["double_compte"] >= 1
-            time = data["anciennete"] >= 2
-
-            if maison and time and double_compte:
-                text += f"**Condition intégration :** ✅\n"
-            else:
-                text += f"**Condition intégration :** ❌\n"
-            if maison:
-                text += "__Maison :__ ✅\n"
-            else:
-                text += f"__Maison :__ ❌ Tu doit encore finir ta maison de membre. 1️⃣\n"
-            if double_compte:
-                text += "__Double compte :__ ✅\n"
-            else:
-                text += f"__Double compte :__ ❌ Tu doit mettre un DC dans le trinité-et-tobago. 2️⃣\n"
-            if time:
-                text += "__Ancienneté :__ ✅\n"
-            else:
-                text += "__Ancienneté :__ ❌ Tu doit avoir un mois d'ancienneté. 3️⃣\n"
-
-            donation = data["donations"] >= 20000
-
-            if donation:
-                text += f"\n**Pôle économique :** ✅\n"
-            else:
-                text += f"\n**Pôle économique :** ❌\n"
-            if donation:
-                text += "__Contribution économique :__ ✅\n"
-            else:
-                text += f"__Contribution économique :__ ❌ Tu doit encore farmer {20000 - data['donations']}$ pour le pays. 4️⃣\n"
-
-            projet = data["constructions"] >= 4
-
-            if projet:
-                text += f"\n**Pôle build :** ✅\n"
-            else:
-                text += f"\n**Pôle build :** ❌\n"
-            if projet:
-                text += "__Contribution de build :__ ✅\n"
-            else:
-                text += f"__Contribution de build :__ ❌ Tu doit participer a encore au moins {4 - data['constructions']} chantier de build. 5️⃣\n"
-
-            animation = data["participation_animation"] == 1
-
-            if animation:
-                text += f"\n**Pôle animation :** ✅\n"
-            else:
-                text += f"\n**Pôle animation :** ❌\n"
-            if animation:
-                text += "__Participation a une animation :__ ✅\n"
-            else:
-                text += f"__Participation a une animation :__ ❌ Tu doit participer a une animation (demander aux animateur de noté ta participation. 6️⃣)\n"
-
-            text += f"\n**Récompense de rank :** Jump boots (immunise contre les dégâts de chute et permet des sauts de 5 blocs)"
-
-        elif data["grade"] == 3:  # Membre
-            embed.add_field(name="Grade :", value="Membre")
-
-            time = data["anciennete"] == 3
-
-            if time:
-                text += f"**Condition intégration :** ✅\n"
-            else:
-                text += f"**Condition intégration :** ❌\n"
-            if time:
-                text += "__Ancienneté :__ ✅\n\n"
-            else:
-                text += "__Ancienneté :__ ❌ Tu doit avoir 3 mois d'ancienneté. 1️⃣\n\n"
-
-            donation = data["donations"] >= 70000
-            projet = data["constructions"] >= 9
-            grade_archi = user.get_role(config["roles"]["architecte"]) is not None
-            grade_builder = user.get_role(config["roles"]["builder"]) is not None
-            grade_archi_builder = grade_builder is True or grade_archi is True
-            grade_anim = user.get_role(config["roles"]["animateur"]) is not None
-            animation = data["creer_animation"] >= 3
-            grade_recru = user.get_role(config["roles"]["recruteur_prim"]) is not None
-            nb_recrutement = data["nb_recrutement"] >= 10
-
-            optionnel = 0
-            if grade_archi and projet:
-                optionnel += 1
-            if grade_recru and nb_recrutement:
-                optionnel += 1
-            if grade_anim and animation:
-                optionnel += 1
-            if donation:
-                optionnel += 1
-
-            if optionnel >= 3:
-                text += f"**Condition optionnelle :** {optionnel}/3 ✅\n"
-            else:
-                text += f"**Condition optionnelle :** {optionnel}/3 ❌\n"
-
-            if donation:
-                text += f"|\n| **Pôle économique :** ✅\n"
-                text += "| __Contribution :__ ✅\n"
-            else:
-                text += f"|\n| **Pôle économique :** ❌\n"
-                text += f"| __Contribution :__ ❌ Tu doit encore farmer {70000 - data['donations']}$ pour le pays. 2️⃣\n"
-
-            if projet and grade_archi_builder:
-                text += f"|\n| **Pôle build :** ✅\n"
-            else:
-                text += f"|\n| **Pôle build :** ❌\n"
-            if projet:
-                text += "| __Contribution de build :__ ✅\n"
-            else:
-                text += f"| __Contribution de build :__ ❌ Tu doit participer a encore au moins {9 - data['constructions']} chantier de build. 3️⃣\n"
-            if grade_archi_builder:
-                text += "| __Gestion de build :__ ✅\n"
-            else:
-                text += f"| __Gestion de build :__ ❌ Tu doit candidaté pour devenir @Architecte ou @Builder. 4️⃣\n"
-
-            if grade_anim and animation:
-                text += f"|\n| **Pôle animation :** ✅\n"
-            else:
-                text += f"|\n| **Pôle animation :** ❌\n"
-            if grade_anim:
-                if animation:
-                    text += "| __Animation :__ ✅\n"
-                else:
-                    text += f"| __Animation :__ ❌ Tu doit encore organiser au moins {9 - data['creer_animation']} animations. 6️⃣\n"
-            else:
-                text += f"| __Animation :__ ❌ Tu doit candidaté pour devenir @Animateur. 5️⃣\n"
-
-            if grade_recru and nb_recrutement:
-                text += f"|\n| **Pôle recrutement :** ✅\n"
-            else:
-                text += f"|\n| **Pôle recrutement :** ❌\n"
-            if grade_recru:
-                if nb_recrutement:
-                    text += "| __Recrutement :__ ✅\n"
-                else:
-                    text += f"| __Recrutement :__ ❌ Tu doit encore recruter au moins {10 - data['nb_recrutement']} joueurs. 8️⃣\n"
-            else:
-                text += f"| __Recrutement :__ ❌ Tu doit candidaté pour devenir @Recruteur. 7️⃣\n"
-
-            text += "\n**Récompense de rank :** Speed Leg (+40% de vitesse de déplacement)"
-
-        elif data["grade"] == 4:  # Membre confirmé
-            embed.add_field(name="Grade :", value="Membre confirmé")
-            text += "Pour continuer à progresser dans le pays, il n'y a plus de conditions de rank précises. Le rank Officier ou gouverneur, est rare, il faut valider de nombreuses conditions. Le meilleur moyen de passé Officier, c'es-t-en continuant, tous les jours à t'investir pour le pays, à être présent et à l'écoute des autres, et ainsi permettre à notre nation d'avancer"
-
-        elif data["grade"] == 5:  # Officier
-            embed.add_field(name="Grade :", value="Officier")
-            text += "Pour continuer à progresser dans le pays, il n'y a plus de conditions de rank précises. Le rank Officier ou gouverneur, est rare, il faut valider de nombreuses critères. Le meilleur moyen de passé Officier, c'es-t-en continuant, tous les jours à t'investir pour le pays, à être présent et à l'écoute des autres, et ainsi permettre à notre nation d'avancer"
-
-        elif data["grade"] == 6:  # Gouverneur
-            embed.add_field(name="Grade :", value="Gouverneur")
-            text += "Le grade de leader n'est pas négotiable"
-
-        elif data["grade"] == 7:  # Leader
-            embed.add_field(name="Grade :", value="Leader")
-            text += "Oui alors... Que dire ici... En soit on dit que la vie c'est de ne jamais arrêter d'apprendre, donc on peu toujours s'élever nan ? Bon ca répond pas la question... Que dire ici ? On a qu'a dire que c'est un easter egg. Ouais c'est une bonne idée, donc \"Ouais GG t'a trouver un easter egg !\" Voila, c'est tout, donc retourne bossé maintenant au lieu de lire ce genre de message"
-
-        embed.add_field(name="}============{ Condition de rank }============{", value=f"{text}", inline=False)
-
-        await ctx.respond(embed=embed)
+        await ctx.respond(embed=embed, view=PlayerInfoJobsButton(self.bot))
+        # if jobs['vect_image']:
+        #     merge_image(jobs['vect_image'])
+        #     job_picture = discord.File("images/job_picture.png", filename="job_picture.png")
+        #     await ctx.send(file=job_picture)
 
     # Detection réaction player-info
     @commands.Cog.listener()
@@ -360,9 +700,11 @@ class Rank(commands.Cog):
             if payload.emoji.name == "8️⃣":
                 await message.reply(f"__La condition de rank **Recrutement de build** (réaction 8️⃣) :__ *demander par {payload.member.mention}*\n \nVous devez réaliser un minimum de 10 recrutement en temps que recruteur (demandez au Resp. recruteur de noté les recrutement que vous organiser).")
 
-    # Command /rank
+    # ------------------------------------------------------------------------------------------
+    #                                   Command /rank
+    # ------------------------------------------------------------------------------------------
     @commands.slash_command(description="Permet de rank une personne.", default_permission=False)
-    @commands.has_any_role(config["roles"]["recruteur_prim"], config["roles"]["recruteur_sec"])
+    @commands.has_any_role(config["roles"]["grades"]["officier"])
     async def rank(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.")):
 
         principal_guild = self.bot.get_guild(config["principal_guild_id"])
@@ -385,46 +727,46 @@ class Rank(commands.Cog):
             return
 
         if data == 1:
-            await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["recrue_confirme"]))
-            await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["nouvelle_recrue"]))
+            await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["grades"]["recrue_confirme"]))
+            await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["grades"]["nouvelle_recrue"]))
             await ctx.respond(f"{user.mention} est passé Recrue confirmé")
             await channel_gg.send(f"Félicitaion à {user.mention} qui passe Recrue confirmé. 🎉")
             cur.execute("UPDATE recrutement SET grade = 2 WHERE id_discord=?", [user.id])
             grade = "Recrue+"
         elif data == 2:
-            await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["membre"]))
+            await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["grades"]["membre"]))
             await ctx.respond(f"{user.mention} est passé Membre")
             await channel_gg.send(f"Félicitaion à {user.mention} qui passe Membre. 🎉")
             cur.execute("UPDATE recrutement SET grade = 3 WHERE id_discord=?", [user.id])
             grade = "Membre"
         elif data == 3:
-            await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["membre_confirme"]))
+            await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["grades"]["membre_confirme"]))
             await ctx.respond(f"{user.mention} est passé Membre confirmé")
             await channel_gg.send(f"Félicitaion à {user.mention} qui passe Membre confirmé. 🎉")
             cur.execute("UPDATE recrutement SET grade = 4 WHERE id_discord=?", [user.id])
             grade = "Membre+"
         elif data == 4:
-            if not ctx.user.get_role(config["roles"]["gouverneur"]) and not ctx.user.get_role(config["roles"]["gouverneur_sec"]):
+            if not ctx.user.get_role(config["roles"]["grades"]["gouverneur"]):
                 await ctx.respond("Seul un gouverneur ou le leader peu rank un membre confirmé Officier.")
                 return
             else:
-                await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["officier_prim"]))
+                await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["grades"]["officier"]))
                 try:
-                    await member_secondary_guild.add_roles(secondary_guild.get_role(config["roles"]["officier_sec"]))
+                    await member_secondary_guild.add_roles(secondary_guild.get_role(config["roles"]["grades"]["officier_sec"]))
                 except AttributeError:
                     pass
-                await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["deco_hauts_grade"]))
+                await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["grades"]["grades"]["deco_hauts_grade"]))
                 await ctx.respond(f"{user.mention} est passé Officier")
                 await channel_gg.send(f"Félicitaion à {user.mention} qui passe Officier. 🎉")
                 cur.execute("UPDATE recrutement SET grade = 5 WHERE id_discord=?", [user.id])
                 grade = "Officier"
         elif data == 5:
-            if not ctx.user.get_role(config["roles"]["second"]):
+            if not ctx.user.get_role(config["roles"]["grades"]["second"]):
                 await ctx.respond("Seul le leader pour ajouté de nouveau gouverneurs <3")
                 return
             else:
-                await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["Gouverneur"]))
-                await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["deco_dieu"]))
+                await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["grades"]["Gouverneur"]))
+                await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["grades"]["deco_dieu"]))
                 await ctx.respond(f"{user.mention} est passé Gouverneur")
                 await channel_gg.send(f"Félicitaion à {user.mention} qui passe Gouverneur. 🎉")
                 cur.execute("UPDATE recrutement SET grade = 6 WHERE id_discord=?", [user.id])
@@ -444,9 +786,11 @@ class Rank(commands.Cog):
         self.bot.db.commit()
         cur.close()
 
-    # Command /unrank
+    # ------------------------------------------------------------------------------------------
+    #                                   Command /unrank
+    # ------------------------------------------------------------------------------------------
     @commands.slash_command(description="Permet de unrank une personne.", default_permission=False)
-    @commands.has_any_role(config["roles"]["officier_prim"], config["roles"]["officier_sec"])
+    @commands.has_any_role(config["roles"]["grades"]["officier"])
     async def unrank(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.")):
 
         principal_guild = self.bot.get_guild(config["principal_guild_id"])
@@ -465,29 +809,29 @@ class Rank(commands.Cog):
             return
 
         if data == 2:
-            await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["recrue_confirme"]))
-            await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["nouvelle_recrue"]))
+            await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["grades"]["recrue_confirme"]))
+            await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["grades"]["nouvelle_recrue"]))
             await ctx.respond(f"{user.mention} est passé recrue")
             cur.execute("UPDATE recrutement SET grade = 1 WHERE id_discord=?", [user.id])
             grade = "Recrue"
         elif data == 3:
-            await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["membre"]))
+            await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["grades"]["membre"]))
             await ctx.respond(f"{user.mention} est passé Recrue+")
             cur.execute("UPDATE recrutement SET grade = 2 WHERE id_discord=?", [user.id])
             grade = "Recrue+"
         elif data == 4:
-            await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["membre_confirme"]))
+            await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["grades"]["membre_confirme"]))
             await ctx.respond(f"{user.mention} est passé Membre")
             cur.execute("UPDATE recrutement SET grade = 3 WHERE id_discord=?", [user.id])
             grade = "Membre"
         elif data == 5:
-            if not ctx.user.get_role(config["roles"]["Gouverneur"]) and not ctx.user.get_role(config["roles"]["gouverneur_sec"]):
+            if not ctx.user.get_role(config["roles"]["grades"]["Gouverneur"]) and not ctx.user.get_role(config["roles"]["grades"]["gouverneur_sec"]):
                 await ctx.respond("Seul un Gouverneur ou le leader peu unrank un Officier membre confirmé .")
                 return
             else:
-                await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["officier_prim"]))
+                await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["grades"]["officier"]))
                 try:
-                    await member_secondary_guild.remove_roles(secondary_guild.get_role(config["roles"]["officier_sec"]))
+                    await member_secondary_guild.remove_roles(secondary_guild.get_role(config["roles"]["grades"]["officier_sec"]))
                 except AttributeError:
                     pass
                 await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["deco_hauts_grade"]))
@@ -519,11 +863,11 @@ class Rank(commands.Cog):
         self.bot.db.commit()
         cur.close()
 
-    # Command /condition
+    # ------------------------------------------------------------------------------------------
+    #                                   Command /condition
+    # ------------------------------------------------------------------------------------------
     @commands.slash_command(description="Modifies les données de rank d'un joueur.", default_permission=True)
-    async def condition(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur."),
-                        donnees: Option(str, "Condition a valider.", choices=["house", "donations", "constructions", "double compte", "participation animation", "créer animation", "recrutement"]),
-                        valeur: Option(int, "Entre une valeur.", required=True)):
+    async def condition(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur."), donnees: Option(str, "Condition a valider.", choices=["house", "donations", "constructions", "double compte", "participation animation", "créer animation", "recrutement"]), valeur: Option(int, "Entre une valeur.", required=True)):
         cur = self.bot.db.cursor()
 
         principal_guild = self.bot.get_guild(config["principal_guild_id"])
@@ -537,7 +881,7 @@ class Rank(commands.Cog):
                 await ctx.respond(f"Seul un administrateur peu effectué cette validation")
 
         elif donnees == "donations":
-            if member_principal_guild.get_role(config["roles"]["officier_prim"]):
+            if member_principal_guild.get_role(config["roles"]["grades"]["officier"]):
                 cur.execute("UPDATE recrutement SET donations = donations+? WHERE id_discord=?", [valeur, user.id])
                 await ctx.respond(f"Les donations de {user.mention} a bien été validé")
             else:
@@ -551,7 +895,7 @@ class Rank(commands.Cog):
                 await ctx.respond(f"Seul un architecte peu effectué cette validation")
 
         elif donnees == "double compte":
-            if member_principal_guild.get_role(config["roles"]["officier_prim"]):
+            if member_principal_guild.get_role(config["roles"]["grades"]["officier"]):
                 cur.execute("UPDATE recrutement SET double_compte = double_compte+? WHERE id_discord=?", [valeur, user.id])
                 await ctx.respond(f"Le statut des doubles comptes de {user.mention} a bien été validé")
             else:
@@ -581,9 +925,11 @@ class Rank(commands.Cog):
         self.bot.db.commit()
         cur.close()
 
-    # Command /absence
+    # ------------------------------------------------------------------------------------------
+    #                                   Command /absence
+    # ------------------------------------------------------------------------------------------
     @commands.slash_command(description="Pour noté l'absence de quelqu'un")
-    @commands.has_any_role(config["roles"]["recruteur_prim"], config["roles"]["recruteur_sec"])
+    @commands.has_any_role(config["roles"]["jobs"]["recruteur"])
     async def absence(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur."), fin: Option(str, "Entre une date de fin", required=True)):
 
         try:
@@ -596,3 +942,287 @@ class Rank(commands.Cog):
         self.bot.db.commit()
 
         await ctx.respond(f"L'absence de {user.mention} jusqu'au {fin} a bien été enregistrer")
+
+
+    # ------------------------------------------------------------------------------------------
+    #                               player-info buttons
+    # ------------------------------------------------------------------------------------------
+class PlayerInfoJobsButton(View):
+    def __init__(self, bot: GuyaBot):
+        super().__init__(timeout=None)
+        self.bot = bot
+
+    @discord.ui.button(label="Farmer", style=discord.ButtonStyle.secondary, emoji="⏪", custom_id="button-right", disabled=True)
+    async def right_button_callback(self, button, interaction):
+        button_left = [x for x in self.children if x.custom_id == "button-left"][0]
+        button_join = [x for x in self.children if x.custom_id == "button-candidater"][0]
+        button_join.disabled = False
+
+        if button.label == "Farmer":
+            button.label = "Économiste"
+            button_left.label = "Soldat"
+            button_join.label = "Rejoindre"
+            selected_job = 10
+        elif button.label == "Économiste":
+            button.label = "Directeur"
+            button_left.label = "Farmer"
+            button_join.label = "Candidater"
+            selected_job = 9
+        elif button.label == "Directeur":
+            button.label = "Constructeur"
+            button_left.label = "Économiste"
+            button_join.label = "Candidater"
+            selected_job = 8
+        elif button.label == "Constructeur":
+            button.label = "Builder"
+            button_left.label = "Directeur"
+            button_join.label = "Rejoindre"
+            selected_job = 7
+        elif button.label == "Builder":
+            button.label = "Joueur"
+            button_left.label = "Constructeur"
+            button_join.label = "Candidater"
+            selected_job = 6
+        elif button.label == "Joueur":
+            button.label = "Animateur"
+            button_left.label = "Builder"
+            button_join.label = "Rejoindre"
+            selected_job = 5
+        elif button.label == "Animateur":
+            button.label = "Recruteur"
+            button_left.label = "Joueur"
+            button_join.label = "Candidater"
+            selected_job = 4
+        elif button.label == "Recruteur":
+            button.label = "Journaliste"
+            button_left.label = "Animateur"
+            button_join.label = "Candidater"
+            selected_job = 3
+        elif button.label == "Journaliste":
+            button.label = "Soldat"
+            button_left.label = "Recruteur"
+            button_join.label = "Candidater"
+            selected_job = 2
+        elif button.label == "Soldat":
+            button.label = "Farmer"
+            button_left.label = "Journaliste"
+            button_join.label = "Candidater"
+            selected_job = 1
+
+        # msg = interaction.response.edit_message
+        # TODO: Interactive user
+        user = interaction.guild.get_member(472786888378286081)
+        ctx = None
+        embed, jobs, data = player_info_main_part(self.bot, user, ctx)
+        embed, can_join = player_info_jobs_part(embed, jobs, selected_job, data)
+
+        if can_join == 0:
+            button_join.disabled = True
+        elif can_join == 1:
+            button_join.disabled = False
+        else:
+            button_join.label = "*Bientôt...*"
+            button_join.disabled = True
+
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    @discord.ui.button(label="Métiers", style=discord.ButtonStyle.secondary, emoji="📑", custom_id="button-jobs")
+    async def jobs_button_callback(self, button, interaction):
+        button_right = [x for x in self.children if x.custom_id == "button-right"][0]
+        button_left = [x for x in self.children if x.custom_id == "button-left"][0]
+        button_candidater = [x for x in self.children if x.custom_id == "button-candidater"][0]
+
+        if button.label == "Métiers":
+            button.label = "Rank-up"
+            button_right.disabled = False
+            button_left.disabled = False
+
+            # TODO: Interactive user
+            user = interaction.guild.get_member(472786888378286081)
+            ctx = None
+
+            embed, jobs, data = player_info_main_part(self.bot, user, ctx)
+
+            text = ""
+            if jobs["MSoldat"] == 0:
+                text += "\n**⬛Soldat :** ⬡⬡⬡"
+            if jobs["MSoldat"] == 1:
+                text += "\n**⬛Soldat :** ⬢⬡⬡"
+            elif jobs["MSoldat"] == 2:
+                text += "\n**⬛Soldat :** ⬢⬢⬡"
+            elif jobs["MSoldat"] == 3:
+                text += "\n**⬛Soldat :** ⬢⬢⬢"
+
+            if jobs["MJournaliste"] == 0:
+                text += "\n**🟦Journaliste :** ⬡⬡⬡"
+            if jobs["MJournaliste"] == 1:
+                text += "\n**🟦Journaliste :** ⬢⬡⬡"
+            elif jobs["MJournaliste"] == 2:
+                text += "\n**🟦Journaliste :** ⬢⬢⬡"
+            elif jobs["MJournaliste"] == 3:
+                text += "\n**🟦Journaliste :** ⬢⬢⬢"
+
+            if jobs["MRecruteur"] == 0:
+                text += "\n**🟪Recruteur :** ⬡⬡⬡"
+            if jobs["MRecruteur"] == 1:
+                text += "\n**🟪Recruteur :** ⬢⬡⬡"
+            elif jobs["MRecruteur"] == 2:
+                text += "\n**🟪Recruteur :** ⬢⬢⬡"
+            elif jobs["MRecruteur"] == 3:
+                text += "\n**🟪Recruteur :** ⬢⬢⬢"
+
+            if jobs["MAnimateur"] == 0:
+                text += "\n**🟩Animateur :** ⬡⬡⬡"
+            if jobs["MAnimateur"] == 1:
+                text += "\n**🟩Animateur :** ⬢⬡⬡"
+            elif jobs["MAnimateur"] == 2:
+                text += "\n**🟩Animateur :** ⬢⬢⬡"
+            elif jobs["MAnimateur"] == 3:
+                text += "\n**🟩Animateur :** ⬢⬢⬢"
+
+            if jobs["MJoueur"] == 0:
+                text += "\n**🟩Joueur :** ⬡⬡⬡"
+            if jobs["MJoueur"] == 1:
+                text += "\n**🟩Joueur :** ⬢⬡⬡"
+            elif jobs["MJoueur"] == 2:
+                text += "\n**🟩Joueur :** ⬢⬢⬡"
+            elif jobs["MJoueur"] == 3:
+                text += "\n**🟩Joueur :** ⬢⬢⬢"
+
+            if jobs["MBuilder"] == 0:
+                text += "\n**🟧Builder :** ⬡⬡⬡"
+            if jobs["MBuilder"] == 1:
+                text += "\n**🟧Builder :** ⬢⬡⬡"
+            elif jobs["MBuilder"] == 2:
+                text += "\n**🟧Builder :** ⬢⬢⬡"
+            elif jobs["MBuilder"] == 3:
+                text += "\n**🟧Builder :** ⬢⬢⬢"
+
+            if jobs["MConstructeur"] == 0:
+                text += "\n**🟧Constructeur :** ⬡⬡⬡"
+            if jobs["MConstructeur"] == 1:
+                text += "\n**🟧Constructeur :** ⬢⬡⬡"
+            elif jobs["MConstructeur"] == 2:
+                text += "\n**🟧Constructeur :** ⬢⬢⬡"
+            elif jobs["MConstructeur"] == 3:
+                text += "\n**🟧Constructeur :** ⬢⬢⬢"
+
+            if jobs["MDirecteur"] == 0:
+                text += "\n**🟨Directeur :** ⬡⬡⬡"
+            if jobs["MDirecteur"] == 1:
+                text += "\n**🟨Directeur :** ⬢⬡⬡"
+            elif jobs["MDirecteur"] == 2:
+                text += "\n**🟨Directeur :** ⬢⬢⬡"
+            elif jobs["MDirecteur"] == 3:
+                text += "\n**🟨Directeur :** ⬢⬢⬢"
+
+            if jobs["MÉconomiste"] == 0:
+                text += "\n**🟨Économiste :** ⬡⬡⬡"
+            if jobs["MÉconomiste"] == 1:
+                text += "\n**🟨Économiste :** ⬢⬡⬡"
+            elif jobs["MÉconomiste"] == 2:
+                text += "\n**🟨Économiste :** ⬢⬢⬡"
+            elif jobs["MÉconomiste"] == 3:
+                text += "\n**🟨Économiste :** ⬢⬢⬢"
+
+            if jobs["MFarmer"] == 0:
+                text += "\n**🟨Farmer :** ⬡⬡⬡"
+            if jobs["MFarmer"] == 1:
+                text += "\n**🟨Farmer :** ⬢⬡⬡"
+            elif jobs["MFarmer"] == 2:
+                text += "\n**🟨Farmer :** ⬢⬢⬡"
+            elif jobs["MFarmer"] == 3:
+                text += "\n**🟨Farmer :** ⬢⬢⬢"
+
+            if text == "":
+                text += "Tu n'a pas encore rejoint de métier, appuis sur le bouton \"candidater\" ou \"rejoindre\" pour en rejoindre un !"
+
+            embed.add_field(name="}==============={ Liste de tes métiers }==============={", value=f"{text}", inline=False)
+
+        elif button.label == "Rank-up":
+            button.label = "Métiers"
+            button_right.disabled = True
+            button_left.disabled = True
+            button_candidater.disabled = True
+
+            # TODO: Interactive user
+            user = interaction.guild.get_member(472786888378286081)
+            ctx = None
+            embed, jobs, data = player_info_main_part(self.bot, user, ctx)
+            embed = player_info_rank_part(data, embed, jobs)
+
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    @discord.ui.button(label="Soldat", style=discord.ButtonStyle.secondary, emoji="⏩", custom_id="button-left", disabled=True)
+    async def left_button_callback(self, button, interaction):
+        button_right = [x for x in self.children if x.custom_id == "button-right"][0]
+        button_join = [x for x in self.children if x.custom_id == "button-candidater"][0]
+        button_join.disabled = False
+
+        if button.label == "Journaliste":
+            button.label = "Recruteur"
+            button_right.label = "Soldat"
+            button_join.label = "Candidater"
+            selected_job = 2
+        elif button.label == "Recruteur":
+            button.label = "Animateur"
+            button_right.label = "Journaliste"
+            button_join.label = "Candidater"
+            selected_job = 3
+        elif button.label == "Animateur":
+            button.label = "Joueur"
+            button_right.label = "Recruteur"
+            button_join.label = "Candidater"
+            selected_job = 4
+        elif button.label == "Joueur":
+            button.label = "Builder"
+            button_right.label = "Animateur"
+            button_join.label = "Rejoindre"
+            selected_job = 5
+        elif button.label == "Builder":
+            button.label = "Constructeur"
+            button_right.label = "Joueur"
+            button_join.label = "Candidater"
+            selected_job = 6
+        elif button.label == "Constructeur":
+            button.label = "Directeur"
+            button_right.label = "Builder"
+            button_join.label = "Rejoindre"
+            selected_job = 7
+        elif button.label == "Directeur":
+            button.label = "Économiste"
+            button_right.label = "Constructeur"
+            button_join.label = "Candidater"
+            selected_job = 8
+        elif button.label == "Économiste":
+            button.label = "Farmer"
+            button_right.label = "Directeur"
+            button_join.label = "Candidater"
+            selected_job = 9
+        elif button.label == "Farmer":
+            button.label = "Soldat"
+            button_right.label = "Économiste"
+            button_join.label = "Rejoindre"
+            selected_job = 10
+        elif button.label == "Soldat":
+            button.label = "Journaliste"
+            button_right.label = "Farmer"
+            selected_job = 1
+
+        # TODO: Interactive user
+        user = interaction.guild.get_member(472786888378286081)
+        ctx = None
+        embed, jobs, data = player_info_main_part(self.bot, user, ctx)
+        embed, can_join = player_info_jobs_part(embed, jobs, selected_job, data)
+
+        if can_join:
+            button_join.disabled = False
+        else:
+            button_join.label = "Tu ne remplis pas les conditions"
+            button_join.disabled = True
+
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    @discord.ui.button(label="Candidater", style=discord.ButtonStyle.green, emoji="👔", custom_id="button-candidater", disabled=True)
+    async def candidater_button_callback(self, button, interaction):
+        await interaction.response.edit_message(view=self)

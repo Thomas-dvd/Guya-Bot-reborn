@@ -27,7 +27,7 @@ class Recrutement(commands.Cog):
 
     # Command /send-register
     @commands.slash_command(name="send-register", guild_ids=[config["secondary_guild_id"]], description="Commence ton recrutement !", default_permission=False)
-    @commands.has_any_role(config["roles"]["officier_prim"], config["roles"]["officier_sec"])
+    @commands.has_any_role(config["roles"]["grades"]["officier"], config["roles"]["grades_sec"]["officier_sec"])
     async def send_register(self, ctx: discord.ApplicationContext):
         await ctx.respond("En cas de difficulté avec la commands, tu peut utiliser le bouton si dessous :")
         await ctx.send(view=RegisterView(self.bot))
@@ -49,7 +49,7 @@ class Recrutement(commands.Cog):
 
     # Command /bvn
     @commands.slash_command(description="Permet de finir le recrutement d'un candidat.", default_permission=False)
-    @commands.has_any_role(config["roles"]["recruteur_prim"], config["roles"]["recruteur_sec"])
+    @commands.has_any_role(config["roles"]["jobs"]["recruteur"], config["roles"]["grades_sec"]["recruteur_sec"])
     async def bvn(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur."), regiment: Option(str, "Régiment du joueur.", choices=config["regiments"].keys()),
                   schematique: Option(str, "Schématique du joueur.", required=False)):
         cur = self.bot.db.cursor()
@@ -78,14 +78,14 @@ class Recrutement(commands.Cog):
         except discord.errors.Forbidden:
             pass
 
-        await member_secondary_guild.remove_roles(secondary_guild.get_role(config["roles"]["att_voc"]))
-        for role in config["roles"]["deco"]:
+        await member_secondary_guild.remove_roles(secondary_guild.get_role(config["roles"]["grades_sec"]["att_voc"]))
+        for role in config["roles"]["grades"]["deco"]:
             await member_principal_guild.add_roles(principal_guild.get_role(role))
-        await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["nouvelle_recrue"]))
+        await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["grades"]["nouvelle_recrue"]))
         await member_principal_guild.add_roles(principal_guild.get_role(config["regiments"][regiment]["role"]))
 
         channel_gg = principal_guild.get_channel(config["channels"]["rank_uwu"])
-        msg = await channel_gg.send(f"Félicitaion à {user.mention} qui passe Nouvelle recrue. Bienvenue à lui dans le pays ! 🎉")
+        msg = await channel_gg.send(f"Félicitation à {user.mention} qui passe Nouvelle recrue. Bienvenue à lui dans le pays ! 🎉")
         emoji = self.bot.get_emoji(config["emoji_bellow_rank_message"])
         await msg.add_reaction(emoji)
         await ctx.respond(f"{user.name} est passé de Candidat à Nouvelle Recrue.")
@@ -95,7 +95,7 @@ class Recrutement(commands.Cog):
 
     # Command /remove-user
     @commands.slash_command(name="remove-user", description="Permet d'effacer un joueur de la base de données", default_permission=False)
-    @commands.has_any_role(config["roles"]["officier_prim"], config["roles"]["officier_sec"])
+    @commands.has_any_role(config["roles"]["grades"]["officier"], config["roles"]["grades_sec"]["officier_sec"])
     async def remove_user(self, ctx: discord.ApplicationContext, pseudo: Option(str, "Entre un pseudo.")):
         cur = self.bot.db.cursor()
 
@@ -125,7 +125,7 @@ class Recrutement(commands.Cog):
         if channel.name.startswith("ticket-") and channel.guild.id == config["secondary_guild_id"]:
             await asyncio.sleep(1)
             embed = utils.create_embed(self.bot, title="**Bonjour, bienvenue sur le discord de la Guyana !**", description=f"""Je suis le bot qui gère les recrutements et les relations internationals.
-    Peu importe pour quoi tu vient, c'est par moi que tu passe. Je suis là pour que tout soit le plus simple possible ! Si à un moment, tu rencontre une quelconque difficulté, n"hésite pas à ping les <@&{config["roles"]["recruteur_sec"]}> (pour les recrutements) ou <@&{config["roles"]["officier_sec"]}> (pour les relations diplomatiques), ils sont la pour ça ! Clique sur le bouton ✅ si c'est bon pour toi.""",
+    Peu importe pour quoi tu vient, c'est par moi que tu passe. Je suis là pour que tout soit le plus simple possible ! Si à un moment, tu rencontre une quelconque difficulté, n"hésite pas à ping les <@&{config["roles"]["grades_sec"]["recruteur_sec"]}> (pour les recrutements) ou <@&{config["roles"]["grades_sec"]["officier_sec"]}> (pour les relations diplomatiques), ils sont la pour ça ! Clique sur le bouton ✅ si c'est bon pour toi.""",
                                        color=Color.gold())
             await channel.send(embed=embed, view=WelcomeConfirmeView(self.bot))
 
@@ -138,11 +138,11 @@ class Recrutement(commands.Cog):
             embed = utils.create_embed(
                 self.bot,
                 title="Félicitations 🎉 !",
-                description=f"""Tu a finit ton enregistrement, on sais maintenant tout de toi 👀. Il vas maintenant falloir vocal avec un <@&{config['roles']['recruteur_sec']}> pour recevoir les accès sur le discord & In Game. 
+                description=f"""Tu a finit ton enregistrement, on sais maintenant tout de toi 👀. Il vas maintenant falloir vocal avec un <@&{config['roles']['grades_sec']['recruteur_sec']}> pour recevoir les accès sur le discord & In Game. 
                                 👇 Écrit en dessous quand tu est disponible pour vocal avec les recruteurs.""",
                 color=Color.gold())
             await message.channel.send(embed=embed)
-            await message.channel.send(f"<@&{config['roles']['recruteur_sec']}>", delete_after=0)
+            await message.channel.send(f"<@&{config['roles']['grades_sec']['recruteur_sec']}>", delete_after=0)
 
     # Maintien des boutons
     @commands.Cog.listener()
@@ -222,9 +222,9 @@ class ReglementConfirmeView(View):
 
         button.disabled = True
         await interaction.response.edit_message(view=self)
-        await interaction.user.add_roles(secondary_guild.get_role(config["roles"]["verifie_sec"]))
-        await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["verifie"]))
-        await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["neutre"]))
+        await interaction.user.add_roles(secondary_guild.get_role(config["roles"]["grades_sec"]["verifie_sec"]))
+        await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["grades"]["verifie"]))
+        await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["grades"]["neutre"]))
 
         embed = utils.create_embed(self.bot, title="Maintenant, dit nous pourquoi tu viens :",
                                    description="- Si tu vient pour te faire recruté et nous rejoindre, click sur le bouton \"Recrutement\"\n- Si tu viens pour de la diplomatie (Joueur d'un autre pays, Modérateur, connaissance hors NG, etc), click sur le bouton \"Diplomatie\"",
@@ -309,7 +309,7 @@ class RegisterModal(Modal):
         except discord.errors.Forbidden:
             pass
         await interaction.channel.edit(name=data['pseudo_ingame'])
-        await interaction.user.add_roles(interaction.guild.get_role(config["roles"]["att_voc"]))
+        await interaction.user.add_roles(interaction.guild.get_role(config["roles"]["grades_sec"]["att_voc"]))
 
         view = View()
         view.add_item(Button(label="Lien de la vidéo", url=config["video_url"]))
