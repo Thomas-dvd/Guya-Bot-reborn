@@ -50,8 +50,7 @@ class Recrutement(commands.Cog):
     # Command /bvn
     @commands.slash_command(description="Permet de finir le recrutement d'un candidat.", default_permission=False)
     @commands.has_any_role(config["roles"]["jobs"]["recruteur"], config["roles"]["grades_sec"]["recruteur_sec"])
-    async def bvn(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur."), regiment: Option(str, "Régiment du joueur.", choices=config["regiments"].keys()),
-                  schematique: Option(str, "Schématique du joueur.", required=False)):
+    async def bvn(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur."), schematique: Option(str, "Schématique du joueur.", required=False)):
         cur = self.bot.db.cursor()
         data = cur.execute("SELECT grade, pseudo_ingame FROM recrutement WHERE id_discord=?", [user.id]).fetchone()
         if data is None or data[0] != 0:
@@ -68,6 +67,7 @@ class Recrutement(commands.Cog):
 
         cur.execute("UPDATE recrutement SET grade=1 WHERE id_discord=?", [user.id])
         cur.execute("UPDATE recrutement SET schematique=? WHERE id_discord=?", [schematique, user.id])
+        cur.execute("UPDATE recrutement SET recruteur=recruteur + 1 WHERE id_discord=?", [ctx.user.id])
 
         self.bot.db.commit()
         cur.close()
@@ -82,7 +82,6 @@ class Recrutement(commands.Cog):
         for role in config["roles"]["grades"]["deco"]:
             await member_principal_guild.add_roles(principal_guild.get_role(role))
         await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["grades"]["nouvelle_recrue"]))
-        await member_principal_guild.add_roles(principal_guild.get_role(config["regiments"][regiment]["role"]))
 
         channel_gg = principal_guild.get_channel(config["channels"]["rank_uwu"])
         msg = await channel_gg.send(f"Félicitation à {user.mention} qui passe Nouvelle recrue. Bienvenue à lui dans le pays ! 🎉")
@@ -90,8 +89,8 @@ class Recrutement(commands.Cog):
         await msg.add_reaction(emoji)
         await ctx.respond(f"{user.name} est passé de Candidat à Nouvelle Recrue.")
 
-        channel_regiment = principal_guild.get_channel(config["regiments"][regiment]["channel"])
-        await channel_regiment.send(random.choice(config["welcome_message"]).format(name=user.mention, regi=regiment))
+        channel_general = principal_guild.get_channel(config["channels"]["general"])
+        await channel_general.send(random.choice(config["welcome_message"]).format(name=user.mention))
 
     # Command /remove-user
     @commands.slash_command(name="remove-user", description="Permet d'effacer un joueur de la base de données", default_permission=False)
