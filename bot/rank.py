@@ -511,7 +511,7 @@ def player_info_jobs_part(embed, jobs, selected_job, data):
         if jobs['MBuilder'] == -1:
             embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
             text += f"*Le métier de builder, du pôle __build__ 🟦 consiste a réaliser les différents schématiques du pays en créatifs, qui seront ensuite poser InGame par les constructeurs.*\n\n**Conditions pour rejoindre : **\n- Maîtriser Schématica et WorldEdit\n- Être motiver\n- Savoir bien build dans le thème de la GDE (et d'une manière général)\n- Être constructeur {config['emoji_1']}\n- Être au minimum <@&{config['roles']['grades']['recrue_confirme']}>"
-            if data['grade'] >= 2 and data['MConstructeur'] >= 1:
+            if data['grade'] >= 2 and jobs['MConstructeur'] >= 1:
                 can_join = 1
             else:
                 can_join = 0
@@ -554,7 +554,7 @@ def player_info_jobs_part(embed, jobs, selected_job, data):
         if jobs['MDirecteur'] == -1:
             embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
             text += f"*Le métier de directeur, du pôle __économique__ 🟨 consiste a gérer un projet économique qui emploi des membres du pays et permet ainsi de faire tournée l'économie du pays.*\n\n**Conditions pour rejoindre : **\n- Être Farmer {config['emoji_2']} __ou__ être Économiste {config['emoji_2']}\n- Être au minimum <@&{config['roles']['grades']['membre']}>"
-            if data['grade'] >= 3 and (data['MFarmer'] >= 2 or data['MÉconomiste'] >= 2):
+            if data['grade'] >= 3 and (jobs['MFarmer'] >= 2 or jobs['MÉconomiste'] >= 2):
                 can_join = 1
             else:
                 can_join = 0
@@ -577,7 +577,7 @@ def player_info_jobs_part(embed, jobs, selected_job, data):
         if jobs['MÉconomiste'] == -1:
             embed.set_thumbnail(url="https://discord.com/assets/e4ec7c5d7af5342f57347c9ada429fba.gif")
             text += f"*Le métier d'économiste, du pôle __économique__ 🟨 consiste a crée des tutoriels de farmings sur les ressources rentables du moment et ainsi permettre au joueurs encore novice du pays de farmer efficacement.*\n\n**Conditions pour rejoindre : **\n- Être Farmer {config['emoji_1']}\n- Être au minimum <@&{config['roles']['grades']['recrue_confirme']}>"
-            if data['grade'] >= 2 and data['MFarmer']:
+            if data['grade'] >= 2 and jobs['MFarmer']:
                 can_join = 1
             else:
                 can_join = 0
