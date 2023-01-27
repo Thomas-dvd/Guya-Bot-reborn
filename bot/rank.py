@@ -789,12 +789,11 @@ class Rank(commands.Cog):
                 return
             else:
                 await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["grades"]["officier"]))
-                await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["grades"]["deco_hauts_grade"]))
                 try:
                     await member_secondary_guild.add_roles(secondary_guild.get_role(config["roles"]["grades_sec"]["officier_sec"]))
                 except AttributeError:
                     pass
-                await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["grades"]["grades"]["deco_hauts_grade"]))
+                await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["grades"]["deco_hauts_grade"]))
                 await ctx.respond(f"{user.mention} est passé Officier")
                 await channel_gg.send(f"Félicitaion à {user.mention} qui passe Officier. 🎉")
                 cur.execute("UPDATE recrutement SET grade = 5 WHERE id_discord=?", [user.id])
