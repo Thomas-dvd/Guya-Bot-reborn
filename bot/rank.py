@@ -767,7 +767,6 @@ class Rank(commands.Cog):
 
         if data == 1:
             await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["grades"]["recrue_confirme"]))
-            await member_principal_guild.remove_roles(principal_guild.get_role(config["roles"]["grades"]["nouvelle_recrue"]))
             await ctx.respond(f"{user.mention} est passé Recrue confirmé")
             await channel_gg.send(f"Félicitaion à {user.mention} qui passe Recrue confirmé. 🎉")
             cur.execute("UPDATE recrutement SET grade = 2 WHERE id_discord=?", [user.id])
@@ -790,8 +789,9 @@ class Rank(commands.Cog):
                 return
             else:
                 await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["grades"]["officier"]))
+                await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["grades"]["deco_hauts_grade"]))
                 try:
-                    await member_secondary_guild.add_roles(secondary_guild.get_role(config["roles"]["grades"]["officier_sec"]))
+                    await member_secondary_guild.add_roles(secondary_guild.get_role(config["roles"]["grades_sec"]["officier_sec"]))
                 except AttributeError:
                     pass
                 await member_principal_guild.add_roles(principal_guild.get_role(config["roles"]["grades"]["grades"]["deco_hauts_grade"]))
