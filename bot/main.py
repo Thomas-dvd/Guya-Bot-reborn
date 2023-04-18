@@ -1,3 +1,5 @@
+import json
+
 from dotenv import load_dotenv
 import os
 import sqlite3
@@ -5,8 +7,9 @@ import sqlite3
 import discord
 from discord.ext import commands
 
-import aaron
-import threading
+with open("config.json", encoding="utf-8") as f:
+    config = json.load(f)
+
 
 class GuyaBot(commands.Bot):
     def __init__(self):
@@ -14,20 +17,20 @@ class GuyaBot(commands.Bot):
 
         self.load_extensions("recrutement", "rank", "debug")
 
-        self.db = sqlite3.connect("database.db")
-        threading.Thread(target=self.start_aaron, daemon=True).start()
-
-    def start_aaron(self):
-        self.aaron = aaron.AaronApi()
+        self.countrydb = sqlite3.connect("country.db")
+        self.worlddb = sqlite3.connect("world.db")
 
     async def on_ready(self):
         print(f"{self.user.name}#{self.user.discriminator} is online !")
         game = discord.Streaming(name="un drop de T4", url="https://www.youtube.com/watch?v=dQw4w9WgXcQ")
         await self.change_presence(activity=game)
+        guild = self.get_guild(config["guild_id"])
+        data_log = guild.get_channel(config["channels"]["data_log"])
+        await data_log.send("Bot démarrer !")
 
     async def on_application_command_error(self, ctx: discord.ApplicationContext, error: discord.DiscordException):
         if isinstance(error, (commands.MissingAnyRole, commands.MissingRole)):
-            await ctx.respond("Tu n'a pas la permission d'executé cette commands, re-essaye et je te supprimer 🔫")
+            await ctx.respond("Tu n'as pas la permission d'exécuter cette commande, réessaye et je te supprime 🔫")
         else:
             await ctx.respond("Une erreur est survenue, on est foutuuuuuuuu 💥")
             raise error

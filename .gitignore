@@ -1,5 +1,5 @@
 .env
-database.db
+database.countrydb
 config.json
 devconfig.json
 trueconfig.json
