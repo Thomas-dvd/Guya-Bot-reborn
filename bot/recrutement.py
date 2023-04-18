@@ -224,29 +224,29 @@ class Recrutement(commands.Cog):
             bar = await data_log.send(line1)
             for category in channels:
                 channel = guild.get_channel(category.id)
-
-                messages = await channel.history(limit=1).flatten()
-                last_message_date = messages[0].created_at.astimezone(pytz.utc)
-                delay = datetime.datetime.now(pytz.utc) - last_message_date
-                if delay >= timedelta(days=1) and (channel.id not in config["channels"]["admin_channels_from_recrutement_category"]):
-                    try:
-                        if (messages[0].author.id != self.bot.user.id) or (messages[0].embeds[0].to_dict()["fields"][0]["value"] != "AFK depuis 24h"):
+                if channel.type == discord.ChannelType.text:
+                    messages = await channel.history(limit=1).flatten()
+                    last_message_date = messages[0].created_at.astimezone(pytz.utc)
+                    delay = datetime.datetime.now(pytz.utc) - last_message_date
+                    if delay >= timedelta(days=1) and (channel.id not in config["channels"]["admin_channels_from_recrutement_category"]):
+                        try:
+                            if (messages[0].author.id != self.bot.user.id) or (messages[0].embeds[0].to_dict()["fields"][0]["value"] != "AFK depuis 24h"):
+                                embed = utils.create_embed(self.bot, title="**Channel inactif !**",
+                                                           description=f"Aucun message n'a été envoyer dans ce channel depuis 24h, Si aucun message n'est envoyé dans les 24h prochaines heures, ce channel sera supprimer.",
+                                                           color=Color.gold())
+                                embed.add_field(name=f"Statut :", value="AFK depuis 24h", inline=True)
+                                await channel.send(embed=embed)
+                                afk += 1
+                            else:
+                                await channel.delete()
+                                supprimer += 1
+                        except IndexError:
                             embed = utils.create_embed(self.bot, title="**Channel inactif !**",
                                                        description=f"Aucun message n'a été envoyer dans ce channel depuis 24h, Si aucun message n'est envoyé dans les 24h prochaines heures, ce channel sera supprimer.",
                                                        color=Color.gold())
                             embed.add_field(name=f"Statut :", value="AFK depuis 24h", inline=True)
                             await channel.send(embed=embed)
                             afk += 1
-                        else:
-                            await channel.delete()
-                            supprimer += 1
-                    except IndexError:
-                        embed = utils.create_embed(self.bot, title="**Channel inactif !**",
-                                                   description=f"Aucun message n'a été envoyer dans ce channel depuis 24h, Si aucun message n'est envoyé dans les 24h prochaines heures, ce channel sera supprimer.",
-                                                   color=Color.gold())
-                        embed.add_field(name=f"Statut :", value="AFK depuis 24h", inline=True)
-                        await channel.send(embed=embed)
-                        afk += 1
 
                 line1.update(1)
                 await bar.edit(content=line1)
