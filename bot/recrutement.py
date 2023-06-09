@@ -44,8 +44,9 @@ class Recrutement(commands.Cog):
     # Command /bvn
     @commands.slash_command(description="Permet de finir le recrutement d'un candidat.", default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["officier"])
-    async def bvn(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur."), schematique: Option(str, "Schématique du joueur.", required=False),
+    async def bvn(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur."), referent: Option(discord.User, "Référent du joueur", required=False), schematique: Option(str, "Schématique du joueur.", required=False),
                   regiment: Option(str, "Régiment du joueur.", choices=config["regiments"], required=False)):
+
         cur = self.bot.countrydb.cursor()
         data = cur.execute("SELECT grade, pseudo_ingame FROM recrutement WHERE id_discord=?", [user.id]).fetchone()
         if regiment is None:
@@ -60,6 +61,7 @@ class Recrutement(commands.Cog):
         cur.execute("UPDATE recrutement SET grade=1 WHERE id_discord=?", [user.id])
         cur.execute("UPDATE recrutement SET schematique=? WHERE id_discord=?", [schematique, user.id])
         cur.execute("UPDATE recrutement SET regiment=? WHERE id_discord=?", [regiment, user.id])
+        cur.execute("UPDATE recrutement SET referent=? WHERE id_discord=?", [referent.id, user.id])
 
         self.bot.countrydb.commit()
         cur.close()
@@ -88,6 +90,7 @@ class Recrutement(commands.Cog):
 
         channel_general = guild.get_channel(config["channels"]["general"])
         await channel_general.send(random.choice(config["welcome_message"]).format(name=user.mention))
+        await channel_general.send(f"La personne qui ce chargera de le guider au sain du pays est {referent.mention}")
 
     # Command /remove-user
     @commands.slash_command(name="remove-user", description="Permet d'effacer un joueur de la base de données", default_permission=False)
@@ -98,7 +101,11 @@ class Recrutement(commands.Cog):
         if de == "Pays":
             cur = self.bot.countrydb.cursor()
             try:
-                user_id = cur.execute("SELECT id_discord FROM recrutement WHERE pseudo_ingame =?", [pseudo]).fetchone()[0]
+                temp = cur.execute("SELECT id_discord FROM recrutement WHERE pseudo_ingame=?", [pseudo]).fetchone()
+                if temp is None:
+                    await ctx.respond("Utilisateur absent de la base de donnée de pays")
+                    return
+                user_id = temp[0]
                 user = ctx.guild.get_member(user_id)
                 cur.execute("DELETE FROM recrutement WHERE pseudo_ingame = ?", [str(pseudo)])
                 cur.execute("SELECT changes()")
@@ -119,7 +126,11 @@ class Recrutement(commands.Cog):
         else:
             cur = self.bot.worlddb.cursor()
             try:
-                user_id = cur.execute("SELECT id_discord FROM diplomatie WHERE pseudo_ingame =?", [pseudo]).fetchone()[0]
+                temp = cur.execute("SELECT id_discord FROM diplomatie WHERE pseudo_ingame=?", [pseudo]).fetchone()
+                if temp is None:
+                    await ctx.respond("Utilisateur absent de la base de donnée diplomatique")
+                    return
+                user_id = temp[0]
                 user = ctx.guild.get_member(user_id)
                 cur.execute("DELETE FROM diplomatie WHERE pseudo_ingame = ?", [str(pseudo)])
                 cur.execute("SELECT changes()")
@@ -166,7 +177,7 @@ class Recrutement(commands.Cog):
         overwrites = {
             guild.me: discord.PermissionOverwrite(view_channel=True),
             member: discord.PermissionOverwrite(view_channel=True),
-            guild.get_role(config["roles"]["jobs"]["recruteur"]): discord.PermissionOverwrite(view_channel=True)
+            guild.get_role(config["roles"]["grades"]["officier"]): discord.PermissionOverwrite(view_channel=True)
         }
         channel = await guild.create_text_channel(name=f"{member.display_name}", category=recrutement_category, overwrites=overwrites)
 
@@ -196,7 +207,7 @@ class Recrutement(commands.Cog):
         overwrites = {
             guild.me: discord.PermissionOverwrite(view_channel=True),
             member: discord.PermissionOverwrite(view_channel=True),
-            guild.get_role(config["roles"]["jobs"]["recruteur"]): discord.PermissionOverwrite(view_channel=True)
+            guild.get_role(config["roles"]["grade"]["officier"]): discord.PermissionOverwrite(view_channel=True)
         }
         channel = await guild.create_text_channel(name=f"{member.display_name}", category=recrutement_category, overwrites=overwrites)
 
@@ -336,9 +347,8 @@ class ConfirmePseudoDiplomatieView(View):
         temp = cur.execute("SELECT * FROM diplomatie WHERE id_discord=?", [data["id_discord"]]).fetchone()
 
         if temp is not None:
-            await interaction.response.send_message("Ce pseudo ingame ou ce compte discord est déjà enregistré dans nos registre de diplomate ! Merci de prendre contacte avec un officier.")
+            cur.execute("DELETE FROM diplomatie WHERE id_discord=?", [data["id_discord"]])
             cur.close()
-            return
 
         cur.execute("INSERT INTO diplomatie (id_discord, pseudo_ingame) VALUES (:id_discord, :pseudo)", data)
         self.bot.worlddb.commit()
@@ -423,9 +433,8 @@ class ConfirmePseudoRecrutementView(View):
         temp = cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [data["id_discord"]]).fetchone()
 
         if temp is not None:
-            await interaction.response.send_message("Ce pseudo ingame ou ce compte discord est déjà enregistré dans nos registre de pays ! Merci de prendre contacte avec un officier.")
+            cur.execute("DELETE FROM recrutement WHERE id_discord=?", [data["id_discord"]])
             cur.close()
-            return
 
         cur.execute(
             "INSERT INTO recrutement (id_discord, pseudo_ingame, annee_naissance, experience, pays, date_recrutement) VALUES (:id_discord, :pseudo_ingame, :annee_naissance, :experience, :pays, :date_recrutement)", data)
@@ -587,6 +596,17 @@ class RecrutementRegisterModal(Modal):
         find = cur.fetchone()
         if not find[0] == 0:
             await interaction.followup.send("Ce pseudo IG est déjà enregistré dans nos registre de diplomatie ! Merci de prendre contacte avec un officier.")
+            cur.close()
+            return
+
+        cur.close()
+
+        cur = self.bot.countrydb.cursor()
+
+        cur.execute("SELECT count(*) FROM recrutement WHERE pseudo_ingame=?", [data["pseudo_ingame"]])
+        find = cur.fetchone()
+        if not find[0] == 0:
+            await interaction.followup.send("Ce pseudo ingame est déjà enregistré dans nos registre de recrutement ! Merci de prendre contacte avec un officier.")
             cur.close()
             return
 

@@ -781,7 +781,7 @@ class Rank(commands.Cog):
                 await ctx.respond(f"{user.mention} est passé Officier")
                 await channel_gg.send(f"Félicitaion à {user.mention} qui passe Officier. 🎉")
                 cur.execute("UPDATE recrutement SET grade = 5 WHERE id_discord=?", [user.id])
-                grade = "Officier"
+                grade = "Offi"
         elif data == 5:
             if not ctx.user.get_role(config["roles"]["grades"]["second"]):
                 await ctx.respond("Seul le leader pour ajouté de nouveau gouverneurs <3")
@@ -856,7 +856,7 @@ class Rank(commands.Cog):
                 await user.remove_roles(guild.get_role(config["roles"]["gouverneur"]))
                 await ctx.respond(f"{user.mention} est passé Officier")
                 cur.execute("UPDATE recrutement SET grade = 5 WHERE id_discord=?", [user.id])
-                grade = "Officier"
+                grade = "Offi"
         else:
             return
 
