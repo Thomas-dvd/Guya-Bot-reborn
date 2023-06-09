@@ -32,7 +32,7 @@ class Debug(commands.Cog):
     # Cooldown pour le Check de la db diplomatique
     async def start_check_loop(self):
         while True:
-            # await asyncio.create_task(self.recrutement_check())
+            await asyncio.create_task(self.recrutement_check())
             await asyncio.sleep(12 * 60 * 60)
             await asyncio.create_task(self.diplomatique_check())
             await asyncio.sleep(12 * 60 * 60)
