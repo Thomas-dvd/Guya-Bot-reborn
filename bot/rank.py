@@ -1053,6 +1053,7 @@ class Rank(commands.Cog):
                     pseudo_ig = message.embeds[0].to_dict()["fields"][3]["value"]
                     rank = message.embeds[0].to_dict()["fields"][4]["value"]
                     user_executant = message.embeds[0].to_dict()["fields"][2]["value"]
+                    user_id = user_executant.strip("<@!>")
 
                     cur = self.bot.countrydb.cursor()
                     temp = cur.execute("SELECT * FROM recrutement WHERE pseudo_ingame=?", [pseudo_ig]).fetchone()
@@ -1096,6 +1097,7 @@ class Rank(commands.Cog):
                                     f"Félicitation, tu a rank-up Recrue Confirmé. Tu doit maintenant vocal avec la personne qui a supporter ton rank ({user_executant}) pour finaliser ton passage Recrue Confirmé.")
                             except Forbidden:
                                 pass
+                            cur.execute("UPDATE recrutement SET referent=? WHERE id_discord=?", [user_id, user_cible.id])
                             await message.delete()
                         else:
                             embed = utils.create_embed(self.bot, f"Rank-up de {data['pseudo_ingame']} Recrue confirmé",
@@ -1141,6 +1143,7 @@ class Rank(commands.Cog):
                                     f"Malheureusement, ton rank-up Recrue Confirmé a été refusé. N'hésite pas a contacter un officier pour lui demander plus d'information.")
                             except Forbidden:
                                 pass
+                            cur.execute("UPDATE recrutement SET referent=? WHERE id_discord=?", [user_id, user_cible.id])
                             await message.delete()
 
                     elif rank == "Officier":
@@ -1185,6 +1188,7 @@ class Rank(commands.Cog):
                                     f"Malheureusement, ton rank-up Officier a été refusé. N'hésite pas a contacter un officier pour lui demander plus d'information.")
                             except Forbidden:
                                 pass
+                            cur.execute("UPDATE recrutement SET referent=? WHERE id_discord=?", [user_id, user_cible.id])
                             await message.delete()
 
                 line1.update(1)
@@ -1192,10 +1196,11 @@ class Rank(commands.Cog):
 
             for message in membre_confirme_messages:
 
-                if (datetime.now(pytz.utc) - message.created_at.astimezone(pytz.utc)) >= timedelta(days=0):
+                if (datetime.now(pytz.utc) - message.created_at.astimezone(pytz.utc)) >= timedelta(days=1):
                     pseudo_ig = message.embeds[0].to_dict()["fields"][3]["value"]
                     rank = message.embeds[0].to_dict()["fields"][4]["value"]
                     user_executant = message.embeds[0].to_dict()["fields"][2]["value"]
+                    user_id = user_executant.strip("<@!>")
 
                     cur = self.bot.countrydb.cursor()
                     temp = cur.execute("SELECT * FROM recrutement WHERE pseudo_ingame=?", [pseudo_ig]).fetchone()
@@ -1239,6 +1244,7 @@ class Rank(commands.Cog):
                                     f"Félicitation, tu a rank-up Membre. Tu doit maintenant vocal avec la personne qui a supporter ton rank ({user_executant}) pour finaliser ton passage Membre.")
                             except Forbidden:
                                 pass
+                            cur.execute("UPDATE recrutement SET referent=? WHERE id_discord=?", [user_id, user_cible.id])
                             await message.delete()
                         else:
                             embed = utils.create_embed(self.bot, f"Rank-up de {data['pseudo_ingame']} Membre",
@@ -1284,6 +1290,7 @@ class Rank(commands.Cog):
                                     f"Malheureusement, ton rank-up Membre a été refusé. N'hésite pas a contacter un officier pour lui demander plus d'information.")
                             except Forbidden:
                                 pass
+                            cur.execute("UPDATE recrutement SET referent=? WHERE id_discord=?", [user_id, user_cible.id])
                             await message.delete()
 
                     elif rank == "Membre Confirmé":
@@ -1321,6 +1328,7 @@ class Rank(commands.Cog):
                                     f"Félicitation, tu a rank-up Membre Confirmé. Tu doit maintenant vocal avec la personne qui a supporter ton rank ({user_executant}) pour finaliser ton passage Membre Confirmé.")
                             except Forbidden:
                                 pass
+                            cur.execute("UPDATE recrutement SET referent=? WHERE id_discord=?", [user_id, user_cible.id])
                             await message.delete()
                         else:
                             try:
