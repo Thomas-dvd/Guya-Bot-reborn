@@ -34,8 +34,8 @@ class Recrutement(commands.Cog):
     # Cooldown pour Check des salons discord AFK
     async def start_check_loop(self):
         while True:
-            await asyncio.create_task(self.discord_channel_check())
             await asyncio.sleep(6 * 60 * 60)
+            await asyncio.create_task(self.discord_channel_check())
 
     # ------------------------------------------------------------------------------------------
     #                                         Commands
@@ -43,7 +43,7 @@ class Recrutement(commands.Cog):
 
     # Command /bvn
     @commands.slash_command(description="Permet de finir le recrutement d'un candidat.", default_permission=False)
-    @commands.has_any_role(config["roles"]["grades"]["officier"])
+    @commands.has_any_role(config["roles"]["grades"]["recruteur"])
     async def bvn(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur."), referent: Option(discord.User, "Référent du joueur", required=False), schematique: Option(str, "Schématique du joueur.", required=False),
                   regiment: Option(str, "Régiment du joueur.", choices=config["regiments"], required=False)):
 
@@ -57,6 +57,11 @@ class Recrutement(commands.Cog):
 
         guild = self.bot.get_guild(config["guild_id"])
         member_guild = guild.get_member(user.id)
+
+        if referent is None:
+            referent = ctx.user
+
+        await ctx.respond(f"{user.name} est passé de Candidat à Nouvelle Recrue.")
 
         cur.execute("UPDATE recrutement SET grade=1 WHERE id_discord=?", [user.id])
         cur.execute("UPDATE recrutement SET schematique=? WHERE id_discord=?", [schematique, user.id])
@@ -86,7 +91,6 @@ class Recrutement(commands.Cog):
         msg = await channel_gg.send(f"Félicitation à {user.mention} qui passe Nouvelle recrue. Bienvenue à lui dans le pays ! 🎉")
         emoji = self.bot.get_emoji(config["emoji_bellow_rank_message"])
         await msg.add_reaction(emoji)
-        await ctx.respond(f"{user.name} est passé de Candidat à Nouvelle Recrue.")
 
         channel_general = guild.get_channel(config["channels"]["general"])
         await channel_general.send(random.choice(config["welcome_message"]).format(name=user.mention))
@@ -177,7 +181,7 @@ class Recrutement(commands.Cog):
         overwrites = {
             guild.me: discord.PermissionOverwrite(view_channel=True),
             member: discord.PermissionOverwrite(view_channel=True),
-            guild.get_role(config["roles"]["grades"]["officier"]): discord.PermissionOverwrite(view_channel=True)
+            guild.get_role(config["roles"]["grades"]["recruteur"]): discord.PermissionOverwrite(view_channel=True)
         }
         channel = await guild.create_text_channel(name=f"{member.display_name}", category=recrutement_category, overwrites=overwrites)
 
@@ -207,7 +211,7 @@ class Recrutement(commands.Cog):
         overwrites = {
             guild.me: discord.PermissionOverwrite(view_channel=True),
             member: discord.PermissionOverwrite(view_channel=True),
-            guild.get_role(config["roles"]["grade"]["officier"]): discord.PermissionOverwrite(view_channel=True)
+            guild.get_role(config["roles"]["grades"]["recruteur"]): discord.PermissionOverwrite(view_channel=True)
         }
         channel = await guild.create_text_channel(name=f"{member.display_name}", category=recrutement_category, overwrites=overwrites)
 

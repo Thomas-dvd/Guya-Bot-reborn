@@ -1,13 +1,17 @@
+import asyncio
 import json
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
+
+import pytz
 from PIL import Image
 from discord.ui import Modal, InputText, View, Button
 
 # from Merge_Pictures import merge_image
 
 import discord
-from discord import Option, Color
+from discord import Option, Color, Forbidden
 from discord.ext import commands
+from tqdm import tqdm
 
 import utils
 from main import GuyaBot
@@ -614,6 +618,12 @@ class Rank(commands.Cog):
     def __init__(self, bot: GuyaBot):
         self.bot = bot
 
+    async def start_check_loop(self):
+        while True:
+            await asyncio.sleep(3 * 60 * 60)
+            await asyncio.create_task(self.rank_check())
+            await asyncio.sleep(3 * 60 * 60)
+
     # ------------------------------------------------------------------------------------------
     #                               Command /player-info
     # ------------------------------------------------------------------------------------------
@@ -734,72 +744,133 @@ class Rank(commands.Cog):
     #                                   Command /rank
     # ------------------------------------------------------------------------------------------
     @commands.slash_command(description="Permet de rank une personne.", default_permission=False)
-    @commands.has_any_role(config["roles"]["grades"]["officier"])
-    async def rank(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.")):
+    async def rank(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=False)):
 
         guild = self.bot.get_guild(config["guild_id"])
-        channel_gg = guild.get_channel(config["channels"]["rank_uwu"])
+        rank_membre_confirmes = guild.get_channel(config["channels"]["vote_membres_confirmés"])
+        rank_officiers = guild.get_channel(config["channels"]["vote_officiers"])
+        yes = self.bot.get_emoji(config["yes"])
+        no = self.bot.get_emoji(config["no"])
         cur = self.bot.countrydb.cursor()
-        temp_data = cur.execute("SELECT grade FROM recrutement WHERE id_discord=?", [user.id]).fetchone()
-        if temp_data is None:
+
+        # La personne regarde pour son propre rank up
+        if (user is None) or user == ctx.user:
+            data_user = cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [ctx.user.id]).fetchone()
+            if data_user is None:
+                await ctx.respond(f"Tu n'est pas enregistrer dans notre base de donnée, merci de suivre les indications du bot dans ton ticket ou de lancer une procédure depuis le {config['channels']['unregister']}.")
+            else:
+                if data_user[5] == 0:
+                    await ctx.respond(f"Tu est candidat, tu doit d'abord finir la procédure de recrutement avant de pouvoir rank-up. N'hésite pas a contacter un officier.")
+                elif data_user[5] == 1:
+                    age = date.today() - date.fromisoformat(data_user[8])
+                    if age >= timedelta(days=5):
+                        await ctx.respond(
+                            f"Tu es maintenant assez ancien dans le pays pour pouvoir rank-up `Recrue Confirmé`. Pour cela, tu dois trouver un Membre (ou plus haut gradé) qui soit prêt à supporter ton rank-up. Il lancera alors la procedure et tu aura la réponse sous 24h. **Attention :** Si la personne qui supporte ton rank-up n'es pas ton référent directe (/référent), elle le deviendra automatiquement.")
+                    else:
+                        await ctx.respond(f"Tu est actuellement `Nouvelle Recrue`, pour passé `Recrue Confirmé`, tu doit avoir au moins **5** jours d'ancienneté pour rank-up (actuellement {age.days} jours).")
+                elif data_user[5] == 2:
+                    await ctx.respond(
+                        f"Pour passer `Membre`, tu dois trouver un `Membre Confirmé` (ou plus haut gradé) qui soit prêt à supporter ton rank-up. Il lancera alors la procedure et tu aura la réponse sous 24h. **Attention :** Si la personne qui supporte ton rank-up n'es pas ton référent directe (/référent), elle le deviendra automatiquement.")
+                elif data_user[5] == 3:
+                    await ctx.respond(
+                        f"Pour passer `Membre Confirmé`, tu dois trouver un `Officier` (ou plus haut gradé) qui soit prêt à supporter ton rank-up. Il lancera alors la procedure et tu aura la réponse une fois le vote terminer. **Attention :** Si la personne qui supporte ton rank-up n'es pas ton référent directe (/référent), elle le deviendra automatiquement.")
+                elif data_user[5] == 4:
+                    await ctx.respond(
+                        f"Pour passer `Officier`, tu dois trouver un `Officier` (ou plus haut gradé) qui soit prêt à supporter ton rank-up. Il lancera alors la procedure et tu aura la réponse une fois le vote terminer.")
+                elif data_user[5] == 5:
+                    await ctx.respond(f"Rho fréro j'ai pas que ca a faire de developer le bot a gérer le rank Gouverneur alors que y'en a 1 tout les 6 mois (et encore).")
+                elif data_user[5] == 6:
+                    await ctx.respond(f"Le rank-up Leader n'est pas permis aux gouverneurs.\nhttps://tenor.com/view/non-nan-cyprien-monsieurdream-gif-5034288")
+                elif data_user[5] == 7:
+                    await ctx.respond(f"T'es déjà au sommet ! T'a déjà le beurre et l'argent du beurre ! Tu veut quoi de plus ? Le sourire de la crémière ?")
+                else:
+                    await ctx.respond(f"Alors mon gars si tu vois ce message, y'a un problème là. Merci de me contacter car manifestement y'a un truc que le bot aime pas chez toi.")
+            return
+
+        data_cible = cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [user.id]).fetchone()
+        data_executant = cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [ctx.user.id]).fetchone()
+        if data_cible is None:
             await ctx.respond("Utilisateur absent de la base de données")
             return
 
-        data = temp_data[0]
-        if not 0 < data < 6:
-            if data == 0:
-                await ctx.respond("Le passage des candidats nouvelle recrues s'effectue via la commande /bvn")
+        if not 0 < data_cible[5] < 6:
+            if data_cible[5] == 0:
+                await ctx.respond("Le passage des candidats nouvelle recrues s'effectue via la commande /bvn.")
             else:
-                await ctx.respond("Cette personne n'est pas rankable")
+                await ctx.respond("Cette personne n'est pas rankable.")
             return
 
-        if data == 1:
-            await user.add_roles(guild.get_role(config["roles"]["grades"]["recrue_confirme"]))
-            await ctx.respond(f"{user.mention} est passé Recrue confirmé")
-            await channel_gg.send(f"Félicitaion à {user.mention} qui passe Recrue confirmé. 🎉")
-            cur.execute("UPDATE recrutement SET grade = 2 WHERE id_discord=?", [user.id])
-            grade = "Recrue+"
-        elif data == 2:
-            await user.add_roles(guild.get_role(config["roles"]["grades"]["membre"]))
-            await ctx.respond(f"{user.mention} est passé Membre")
-            await channel_gg.send(f"Félicitaion à {user.mention} qui passe Membre. 🎉")
-            cur.execute("UPDATE recrutement SET grade = 3 WHERE id_discord=?", [user.id])
-            grade = "Membre"
-        elif data == 3:
-            await user.add_roles(guild.get_role(config["roles"]["grades"]["membre_confirme"]))
-            await ctx.respond(f"{user.mention} est passé Membre confirmé")
-            await channel_gg.send(f"Félicitaion à {user.mention} qui passe Membre confirmé. 🎉")
-            cur.execute("UPDATE recrutement SET grade = 4 WHERE id_discord=?", [user.id])
-            grade = "Membre+"
-        elif data == 4:
-            if not ctx.user.get_role(config["roles"]["grades"]["gouverneur"]):
-                await ctx.respond("Seul un gouverneur ou le leader peu rank un membre confirmé Officier.")
+        if data_cible[5] == 1:
+            age = date.today() - date.fromisoformat(data_cible[8])
+            if data_executant[5] < 3:
+                await ctx.respond(f"Tu n'es pas assez haut gradé pour supporter le rank up de {user.mention}")
                 return
-            else:
-                await user.add_roles(guild.get_role(config["roles"]["grades"]["officier"]))
-                await user.add_roles(guild.get_role(config["roles"]["deco"]["hauts_grader"]))
-                await ctx.respond(f"{user.mention} est passé Officier")
-                await channel_gg.send(f"Félicitaion à {user.mention} qui passe Officier. 🎉")
-                cur.execute("UPDATE recrutement SET grade = 5 WHERE id_discord=?", [user.id])
-                grade = "Offi"
-        elif data == 5:
-            if not ctx.user.get_role(config["roles"]["grades"]["second"]):
-                await ctx.respond("Seul le leader pour ajouté de nouveau gouverneurs <3")
+            if age < timedelta(days=5):
+                await ctx.respond(f"{user.mention} doit avoir au moins **5** jours d'ancienneté pour rank-up (actuellement {age.days} jours).")
                 return
-            else:
-                await user.add_roles(guild.get_role(config["roles"]["grades"]["Gouverneur"]))
-                await ctx.respond(f"{user.mention} est passé Gouverneur")
-                await channel_gg.send(f"Félicitaion à {user.mention} qui passe Gouverneur. 🎉")
-                cur.execute("UPDATE recrutement SET grade = 6 WHERE id_discord=?", [user.id])
-                grade = "Gouverneur"
+            embed = utils.create_embed(self.bot, f"Rank-up de {data_cible[2]} Recrue confirmé",
+                                       description=f"Tout officier souhaitant s'opposer à ce rank doit rajouter la réaction :no: a ce message. Si il n'y a pas de réaction :no: d'ici 24h, le rank-up sera valider. Si il y a opposition, une phase de vote d'une durée de 24h sera lancer, où chaque officier pourra voté pour (:yes:) ou contre (:no:).",
+                                       color=Color.green())
+            embed.add_field(name="Début de la procédure :", value=f"{datetime.now()}")
+            embed.add_field(name="Ancienneté dans le pays :", value=f"{(date.today() - date.fromisoformat(data_cible[8])).days} jours")
+            embed.add_field(name="Proposé au rank-up par :", value=f"{ctx.user.mention}")
+            embed.add_field(name="Pseudo IG :", value=f"{data_cible[2]}")
+            embed.add_field(name="Rank-up vers :", value=f"Recrue Confirmé")
+            msg = await rank_officiers.send(embed=embed)
+            await msg.add_reaction(no)
+
+        elif data_cible[5] == 2:
+            if data_executant[5] < 4:
+                await ctx.respond(f"Tu n'es pas assez haut gradé pour supporter le rank up de {user.mention}")
+                return
+            embed = utils.create_embed(self.bot, f"Rank-up de {data_cible[2]} Membre",
+                                       description=f"Tout membre+ (ou plus haut gradé) souhaitant s'opposer à ce rank doit rajouter la réaction :no: a ce message. Si il n'y a pas de réaction :no: d'ici 24h, le rank-up sera valider. Si il y a opposition, une phase de vote d'une durée de 24h sera lancer, où chaque membre+ (ou plus haut gradé) pourra voté pour (:yes:) ou contre (:no:).",
+                                       color=Color.green())
+            embed.add_field(name="Début de la procédure :", value=f"{datetime.now()}")
+            embed.add_field(name="Ancienneté dans le pays :", value=f"{(date.today() - date.fromisoformat(data_cible[8])).days} jours")
+            embed.add_field(name="Proposé au rank-up par :", value=f"{ctx.user.mention}")
+            embed.add_field(name="Pseudo IG :", value=f"{data_cible[2]}")
+            embed.add_field(name="Rank-up vers :", value=f"Membre")
+            msg = await rank_membre_confirmes.send(embed=embed)
+            await msg.add_reaction(no)
+
+        elif data_cible[5] == 3:
+            if data_executant[5] < 5:
+                await ctx.respond(f"Tu n'es pas assez haut gradé pour supporter le rank up de {user.mention}")
+                return
+            embed = utils.create_embed(self.bot, f"Rank-up de {data_cible[2]} Membre confirmé",
+                                       description=f"Tout les membres confirmés et officiers doivent voté pour (:yes:) ou contre (:no:) a ce rank-up. Si le vote des officiers dépasse 70% de pour ou si le vote des membres+ est unanime, il permet de bypasser l'autre vote.",
+                                       color=Color.green())
+            embed.add_field(name="Début de la procédure :", value=f"{datetime.now()}")
+            embed.add_field(name="Ancienneté dans le pays :", value=f"{(date.today() - date.fromisoformat(data_cible[8])).days} jours")
+            embed.add_field(name="Proposé au rank-up par :", value=f"{ctx.user.mention}")
+            embed.add_field(name="Pseudo IG :", value=f"{data_cible[2]}")
+            embed.add_field(name="Rank-up vers :", value=f"Membre Confirmé")
+            msg = await rank_membre_confirmes.send(embed=embed)
+            await msg.add_reaction(yes)
+            await msg.add_reaction(no)
+
+        elif data_cible[5] == 4:
+            if data_executant[5] < 5:
+                await ctx.respond(f"Tu n'es pas assez haut gradé pour supporter le rank up de {user.mention}")
+                return
+            embed = utils.create_embed(self.bot, f"Rank-up de {data_cible[2]} Membre confirmé",
+                                       description=f"Tout les officiers doivent voté pour (:yes:) ou contre (:no:) a ce rank-up. Si le vote des gouverneurs est unanime, il permet de bypasser l'autre vote.",
+                                       color=Color.green())
+            embed.add_field(name="Début de la procédure :", value=f"{datetime.now()}")
+            embed.add_field(name="Ancienneté dans le pays :", value=f"{(date.today() - date.fromisoformat(data_cible[8])).days} jours")
+            embed.add_field(name="Proposé au rank-up par :", value=f"{ctx.user.mention}")
+            embed.add_field(name="Pseudo IG :", value=f"{data_cible[2]}")
+            embed.add_field(name="Rank-up vers :", value=f"Officier")
+            msg = await rank_membre_confirmes.send(embed=embed)
+            await msg.add_reaction(yes)
+            await msg.add_reaction(no)
+
         else:
-            return
+            await ctx.respond(f"Alors mon gars si tu vois ce message, y'a un problème là. Merci de me contacter car manifestement y'a un truc que le bot aime pas chez toi.")
 
-        ig_name = cur.execute("SELECT pseudo_ingame FROM recrutement WHERE id_discord=?", [user.id]).fetchone()
-        try:
-            await user.edit(nick=f"{grade} | {ig_name[0]}")
-        except discord.errors.Forbidden:
-            pass
+        await ctx.respond(f"Procédure de rank-up lancer sur {user.mention}")
+
         self.bot.countrydb.commit()
         cur.close()
 
@@ -957,6 +1028,324 @@ class Rank(commands.Cog):
             pass
         await ctx.respond(f"L'absence de {user.mention} jusqu'au {fin} a bien été enregistrer")
 
+    # ------------------------------------------------------------------------------------------
+    #                                   Loop pour les ranks
+    # ------------------------------------------------------------------------------------------
+    async def rank_check(self):
+        guild = self.bot.get_guild(config["guild_id"])
+        membre_confirme = guild.get_channel(config["channels"]["vote_membres_confirmés"])
+        officier = guild.get_channel(config["channels"]["vote_officiers"])
+        data_log = guild.get_channel(config["channels"]["data_log"])
+        yes = self.bot.get_emoji(config["yes"])
+        no = self.bot.get_emoji(config["no"])
+        membre_confirme_messages = await membre_confirme.history().flatten()
+        officier_messages = await officier.history().flatten()
+        longueur = len(membre_confirme_messages) + len(officier_messages)
+
+        with tqdm(total=longueur, unit="messages", ascii="⬡⬢", bar_format='{l_bar}{bar:25}{r_bar}{bar:-10b}', desc="Check des messages de rank-up ") as line1:
+            if longueur == 0:
+                await data_log.send("Pas de procédure de rank-up en cours.")
+                return
+            bar = await data_log.send(line1)
+            for message in officier_messages:
+
+                if (datetime.now(pytz.utc) - message.created_at.astimezone(pytz.utc)) >= timedelta(days=1):
+                    pseudo_ig = message.embeds[0].to_dict()["fields"][3]["value"]
+                    rank = message.embeds[0].to_dict()["fields"][4]["value"]
+                    user_executant = message.embeds[0].to_dict()["fields"][2]["value"]
+
+                    cur = self.bot.countrydb.cursor()
+                    temp = cur.execute("SELECT * FROM recrutement WHERE pseudo_ingame=?", [pseudo_ig]).fetchone()
+                    data = {
+                        "id_sys": temp[0],
+                        "id_discord": temp[1],
+                        "pseudo_ingame": temp[2],
+                        "annee_naissance": temp[3],
+                        "experience": temp[4],
+                        "grade": temp[5],
+                        "country": temp[6],
+                        "peut_quitter_pays": temp[7],
+                        "date_recrutement": temp[8],
+                        "anciennete": temp[9],
+                        "schematique": temp[10],
+                        "regiment": temp[11],
+                        "last_connection": temp[12],
+                        "absence_fin": temp[13],
+                        "referent": temp[14]
+                    }
+
+                    guild = self.bot.get_guild(config["guild_id"])
+                    user_cible = guild.get_member(data["id_discord"])
+
+                    if rank == "Recrue Confirmé":
+                        for reaction in message.reactions:
+                            if reaction.emoji.id == config["no"]:
+                                reaction_count = reaction.count
+                                break
+                        if reaction_count == 1:
+                            channel_gg = guild.get_channel(config["channels"]["rank_uwu"])
+                            await user_cible.add_roles(guild.get_role(config["roles"]["grades"]["recrue_confirme"]))
+                            await channel_gg.send(f"Félicitaion à {user_cible.mention} qui passe Recrue confirmé. 🎉")
+                            cur.execute("UPDATE recrutement SET grade = 2 WHERE id_discord=?", [user_cible.id])
+                            try:
+                                await user_cible.edit(nick=f"Recrue+ | {data['pseudo_ingame']}")
+                            except discord.errors.Forbidden:
+                                pass
+                            try:
+                                await user_cible.send(
+                                    f"Félicitation, tu a rank-up Recrue Confirmé. Tu doit maintenant vocal avec la personne qui a supporter ton rank ({user_executant}) pour finaliser ton passage Recrue Confirmé.")
+                            except Forbidden:
+                                pass
+                            await message.delete()
+                        else:
+                            embed = utils.create_embed(self.bot, f"Rank-up de {data['pseudo_ingame']} Recrue confirmé",
+                                                       description=f"Face a l'opposition d'un officier au rank-up, tout les officiers sont invité a voté d'ici 24h avec pour (:yes:) ou contre (:no:). La majorité est nécessaire pour rank up. L'absence de vote sera considérer comme blanc.",
+                                                       color=Color.green())
+                            embed.add_field(name="Début du vote :", value=f"{datetime.now()}")
+                            embed.add_field(name="Ancienneté dans le pays :", value=f"{(date.today() - date.fromisoformat(data['date_recrutement'])).days} jours")
+                            embed.add_field(name="Proposé au rank-up par :", value=f"{user_executant}")
+                            embed.add_field(name="Pseudo IG :", value=f"{data['pseudo_ingame']}")
+                            embed.add_field(name="Rank-up vers :", value=f"Recrue Confirmé (vote)")
+                            msg = await officier.send(embed=embed)
+                            await msg.add_reaction(yes)
+                            await msg.add_reaction(no)
+                            await message.delete()
+
+                    elif rank == "Recrue Confirmé (vote)":
+                        for reaction in message.reactions:
+                            if reaction.emoji.id == config["yes"]:
+                                yes_count = (reaction.count - 1)
+                                break
+                        for reaction in message.reactions:
+                            if reaction.emoji.id == config["no"]:
+                                no_count = (reaction.count - 1)
+                                break
+                        if yes_count >= no_count:
+                            channel_gg = guild.get_channel(config["channels"]["rank_uwu"])
+                            await user_cible.add_roles(guild.get_role(config["roles"]["grades"]["recrue_confirme"]))
+                            await channel_gg.send(f"Félicitaion à {user_cible.mention} qui passe Recrue confirmé. 🎉")
+                            cur.execute("UPDATE recrutement SET grade = 2 WHERE id_discord=?", [user_cible.id])
+                            try:
+                                await user_cible.edit(nick=f"Recrue+ | {data['pseudo_ingame']}")
+                            except discord.errors.Forbidden:
+                                pass
+                            try:
+                                await user_cible.send(
+                                    f"Félicitation, tu a rank-up Recrue Confirmé. Tu doit maintenant vocal avec la personne qui a supporter ton rank ({user_executant}) pour finaliser ton passage Recrue Confirmé.")
+                            except Forbidden:
+                                pass
+                            await message.delete()
+                        else:
+                            try:
+                                await user_cible.send(
+                                    f"Malheureusement, ton rank-up Recrue Confirmé a été refusé. N'hésite pas a contacter un officier pour lui demander plus d'information.")
+                            except Forbidden:
+                                pass
+                            await message.delete()
+
+                    elif rank == "Officier":
+                        for reaction in message.reactions:
+                            if reaction.emoji.id == config["yes"]:
+                                yes_count_offi = -1
+                                yes_count_gouv = 0
+                                async for user in reaction.users():
+                                    if user.get_role(config["roles"]["grades"]["gouverneur"]):
+                                        yes_count_gouv += 1
+                                    else:
+                                        yes_count_offi += 1
+                                break
+                        for reaction in message.reactions:
+                            if reaction.emoji.id == config["yes"]:
+                                no_count_offi = -1
+                                no_count_gouv = 0
+                                async for user in reaction.users():
+                                    if user.get_role(config["roles"]["grades"]["gouverneur"]):
+                                        no_count_gouv += 1
+                                    else:
+                                        no_count_offi += 1
+                                break
+                        if no_count_gouv == 0 or ((yes_count_offi+yes_count_gouv) >= (no_count_offi+no_count_gouv) and yes_count_gouv >= no_count_gouv):
+                            channel_gg = guild.get_channel(config["channels"]["rank_uwu"])
+                            await user_cible.add_roles(guild.get_role(config["roles"]["grades"]["officier"]))
+                            await channel_gg.send(f"Félicitaion à {user_cible.mention} qui passe Officier. 🎉")
+                            cur.execute("UPDATE recrutement SET grade = 4 WHERE id_discord=?", [user_cible.id])
+                            try:
+                                await user_cible.edit(nick=f"Offi | {data['pseudo_ingame']}")
+                            except discord.errors.Forbidden:
+                                pass
+                            try:
+                                await user_cible.send(
+                                    f"Félicitation, tu a rank-up Officier. Tu doit maintenant vocal avec la personne qui a supporter ton rank ({user_executant}) pour finaliser ton passage Officier.")
+                            except Forbidden:
+                                pass
+                            await message.delete()
+                        else:
+                            try:
+                                await user_cible.send(
+                                    f"Malheureusement, ton rank-up Officier a été refusé. N'hésite pas a contacter un officier pour lui demander plus d'information.")
+                            except Forbidden:
+                                pass
+                            await message.delete()
+
+                line1.update(1)
+                await bar.edit(content=line1)
+
+            for message in membre_confirme_messages:
+
+                if (datetime.now(pytz.utc) - message.created_at.astimezone(pytz.utc)) >= timedelta(days=0):
+                    pseudo_ig = message.embeds[0].to_dict()["fields"][3]["value"]
+                    rank = message.embeds[0].to_dict()["fields"][4]["value"]
+                    user_executant = message.embeds[0].to_dict()["fields"][2]["value"]
+
+                    cur = self.bot.countrydb.cursor()
+                    temp = cur.execute("SELECT * FROM recrutement WHERE pseudo_ingame=?", [pseudo_ig]).fetchone()
+                    data = {
+                        "id_sys": temp[0],
+                        "id_discord": temp[1],
+                        "pseudo_ingame": temp[2],
+                        "annee_naissance": temp[3],
+                        "experience": temp[4],
+                        "grade": temp[5],
+                        "country": temp[6],
+                        "peut_quitter_pays": temp[7],
+                        "date_recrutement": temp[8],
+                        "anciennete": temp[9],
+                        "schematique": temp[10],
+                        "regiment": temp[11],
+                        "last_connection": temp[12],
+                        "absence_fin": temp[13],
+                        "referent": temp[14]
+                    }
+
+                    guild = self.bot.get_guild(config["guild_id"])
+                    user_cible = guild.get_member(data["id_discord"])
+
+                    if rank == "Membre":
+                        for reaction in message.reactions:
+                            if reaction.emoji.id == config["no"]:
+                                reaction_count = reaction.count
+                                break
+                        if reaction_count == 1:
+                            channel_gg = guild.get_channel(config["channels"]["rank_uwu"])
+                            await user_cible.add_roles(guild.get_role(config["roles"]["grades"]["membre"]))
+                            await channel_gg.send(f"Félicitaion à {user_cible.mention} qui passe Membre. 🎉")
+                            cur.execute("UPDATE recrutement SET grade = 3 WHERE id_discord=?", [user_cible.id])
+                            try:
+                                await user_cible.edit(nick=f"Membre | {data['pseudo_ingame']}")
+                            except discord.errors.Forbidden:
+                                pass
+                            try:
+                                await user_cible.send(
+                                    f"Félicitation, tu a rank-up Membre. Tu doit maintenant vocal avec la personne qui a supporter ton rank ({user_executant}) pour finaliser ton passage Membre.")
+                            except Forbidden:
+                                pass
+                            await message.delete()
+                        else:
+                            embed = utils.create_embed(self.bot, f"Rank-up de {data['pseudo_ingame']} Membre",
+                                                       description=f"Face a l'opposition d'un officier ou d'un membre confirmé au rank-up, tout les officiers et membres confirmés sont invité a voté d'ici 24h avec pour (:yes:) ou contre (:no:). La majorité est nécessaire pour rank up. L'absence de vote sera considérer comme blanc.",
+                                                       color=Color.green())
+                            embed.add_field(name="Début du vote :", value=f"{datetime.now()}")
+                            embed.add_field(name="Ancienneté dans le pays :", value=f"{(date.today() - date.fromisoformat(data['date_recrutement'])).days} jours")
+                            embed.add_field(name="Proposé au rank-up par :", value=f"{user_executant}")
+                            embed.add_field(name="Pseudo IG :", value=f"{data['pseudo_ingame']}")
+                            embed.add_field(name="Rank-up vers :", value=f"Membre (vote)")
+                            msg = await officier.send(embed=embed)
+                            await msg.add_reaction(yes)
+                            await msg.add_reaction(no)
+                            await message.delete()
+
+                    elif rank == "Membre (vote)":
+                        for reaction in message.reactions:
+                            if reaction.emoji.id == config["yes"]:
+                                yes_count = (reaction.count - 1)
+                                break
+                        for reaction in message.reactions:
+                            if reaction.emoji.id == config["no"]:
+                                no_count = (reaction.count - 1)
+                                break
+                        if yes_count >= no_count:
+                            channel_gg = guild.get_channel(config["channels"]["rank_uwu"])
+                            await user_cible.add_roles(guild.get_role(config["roles"]["grades"]["membre"]))
+                            await channel_gg.send(f"Félicitaion à {user_cible.mention} qui passe Membre. 🎉")
+                            cur.execute("UPDATE recrutement SET grade = 3 WHERE id_discord=?", [user_cible.id])
+                            try:
+                                await user_cible.edit(nick=f"Membre | {data['pseudo_ingame']}")
+                            except discord.errors.Forbidden:
+                                pass
+                            try:
+                                await user_cible.send(
+                                    f"Félicitation, tu a rank-up Membre. Tu doit maintenant vocal avec la personne qui a supporter ton rank ({user_executant}) pour finaliser ton passage Membre.")
+                            except Forbidden:
+                                pass
+                            await message.delete()
+                        else:
+                            try:
+                                await user_cible.send(
+                                    f"Malheureusement, ton rank-up Membre a été refusé. N'hésite pas a contacter un officier pour lui demander plus d'information.")
+                            except Forbidden:
+                                pass
+                            await message.delete()
+
+                    elif rank == "Membre Confirmé":
+                        for reaction in message.reactions:
+                            if reaction.emoji.id == config["yes"]:
+                                yes_count_offi = 0
+                                yes_count_member_confirme = -1
+                                async for user in reaction.users():
+                                    if user.get_role(config["roles"]["grades"]["officier"]):
+                                        yes_count_offi += 1
+                                    else:
+                                        yes_count_member_confirme += 1
+                                break
+                        for reaction in message.reactions:
+                            if reaction.emoji.id == config["yes"]:
+                                no_count_offi = 0
+                                no_count_member_confirme = -1
+                                async for user in reaction.users():
+                                    if user.get_role(config["roles"]["grades"]["officier"]):
+                                        no_count_offi += 1
+                                    else:
+                                        no_count_member_confirme += 1
+                                break
+                        if (yes_count_offi >= no_count_offi and (yes_count_member_confirme + yes_count_offi) >= (no_count_member_confirme + no_count_offi)) or yes_count_offi / (yes_count_offi + no_count_offi) >= 0.7:
+                            channel_gg = guild.get_channel(config["channels"]["rank_uwu"])
+                            await user_cible.add_roles(guild.get_role(config["roles"]["grades"]["membre_confirme"]))
+                            await channel_gg.send(f"Félicitaion à {user_cible.mention} qui passe Membre confirmé. 🎉")
+                            cur.execute("UPDATE recrutement SET grade = 4 WHERE id_discord=?", [user_cible.id])
+                            try:
+                                await user_cible.edit(nick=f"Membre+ | {data['pseudo_ingame']}")
+                            except discord.errors.Forbidden:
+                                pass
+                            try:
+                                await user_cible.send(
+                                    f"Félicitation, tu a rank-up Membre Confirmé. Tu doit maintenant vocal avec la personne qui a supporter ton rank ({user_executant}) pour finaliser ton passage Membre Confirmé.")
+                            except Forbidden:
+                                pass
+                            await message.delete()
+                        else:
+                            try:
+                                await user_cible.send(
+                                    f"Malheureusement, ton rank-up Membre Confirmé a été refusé. N'hésite pas a contacter un officier pour lui demander plus d'information.")
+                            except Forbidden:
+                                pass
+                            await message.delete()
+
+                line1.update(1)
+                await bar.edit(content=line1)
+
+        await data_log.send(f"Vérification ranks terminé !")
+        self.bot.countrydb.commit()
+        cur.close()
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        await self.start_check_loop()
+
+    @commands.slash_command(description="Lance immédiatement le check des rank-up en cours", default_permission=False, name="fc-rank")
+    @commands.has_any_role(config["roles"]["grades"]["officier"])
+    async def force_check_rank(self, ctx: discord.ApplicationContext):
+        await ctx.respond("Check des ranks lancé.")
+        await self.rank_check()
 
 # class PlayerInfoJobsButton(View):
 #     # ------------------------------------------------------------------------------------------

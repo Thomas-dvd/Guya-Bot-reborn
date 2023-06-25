@@ -29,7 +29,7 @@ class Debug(commands.Cog):
     def __init__(self, bot: GuyaBot):
         self.bot = bot
 
-    # Cooldown pour le Check de la db diplomatique
+    # Cooldown pour le Check de la db diplomatique et de pays
     async def start_check_loop(self):
         while True:
             await asyncio.create_task(self.recrutement_check())
@@ -301,16 +301,46 @@ class Debug(commands.Cog):
 
         embed = utils.create_embed(self.bot, f"Référent {user}", color=Color.green())
         if temp[14] is None:
-            temp[14] = "Pas de référent"
-        embed.add_field(name="Référent :", value=f"<@{temp[14]}>")
+            embed.add_field(name="Référent :", value=f"Pas de référent")
+        else:
+            if temp[5] >= 3:
+                referent_tier_on = ""
+            else:
+                referent_tier_on = f"Membre référent :\n<@{temp[14]}>"
 
-        temp2 = cur.execute("SELECT id_discord FROM recrutement WHERE referent=?", [user.id]).fetchall()
-        if temp2 is None:
+            temp2 = cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [temp[14]]).fetchone()
+            if temp[5] >= 4:
+                referent_tier_two = ""
+            else:
+                if temp2[5] >= 4:
+                    referent_tier_two = f"Membre+ référent :\n<@{temp[14]}>"
+                else:
+                    referent_tier_two = f"Membre+ référent :\n<@{temp2[14]}>"
+
+            temp3 = cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [temp2[14]]).fetchone()
+            if temp[5] >= 5:
+                referent_tier_three = ""
+            else:
+                if temp2[5] >= 5:
+                    referent_tier_three = f"Officier référent :\n<@{temp[14]}>"
+                elif temp3[5] >= 5:
+                    referent_tier_three = f"Officier référent :\n<@{temp2[14]}>"
+                else:
+                    referent_tier_three = f"Officier référent :\n<@{temp3[14]}>"
+
+            temp4 = cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [temp3[14]]).fetchone()
+            referent_tier_four = f"Leader référent :\n<@{temp4[14]}>"
+
+            embed.add_field(name="Référent :", value=f"{referent_tier_on}\n{referent_tier_two}\n{referent_tier_three}\n{referent_tier_four}")
+
+        temp = cur.execute("SELECT id_discord FROM recrutement WHERE referent=?", [user.id]).fetchall()
+        if temp is None:
             text = "Référent de personne"
         else:
+
             text = ""
-            for i in range(len(temp2)):
-                text += f"<@{temp2[i][0]}> "
+            for i in range(len(temp)):
+                text += f"<@{temp[i][0]}> "
         embed.add_field(name="Responsable de :", value=f"{text}")
 
         await ctx.respond(embed=embed)
@@ -318,7 +348,7 @@ class Debug(commands.Cog):
     # Command /fc-recrutement
     @commands.slash_command(name="fc-recrutement", description="Actualise le statut d'une personne", default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["officier"])
-    async def force_check(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=False)):
+    async def force_check_recrutement(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=False)):
         guild = self.bot.get_guild(config["guild_id"])
 
         if user is not None:
@@ -502,11 +532,11 @@ class Debug(commands.Cog):
                     user = guild.get_member(db_data["id_discord"])
 
                     if user is None:
-                        await data_bot.send(f"Le joueur <@{db_data['id_discord']}> ({db_data['pseudo_ingame']}) a quitter le discord.")
+                        await data_bot.send(f"Le joueur <@{db_data['id_discord']}> ({db_data['pseudo_ingame']}) a quitté le discord.")
                         Leave += 1
                         user = None
                     elif user.get_role(config["roles"]["grades"]["reglement_valider"]) is None and (db_data['grade'] != 0):
-                        await data_bot.send(f"Le joueur <@{db_data['id_discord']}> ({db_data['pseudo_ingame']}) a quitter le discord et est revenu.")
+                        await data_bot.send(f"Le joueur <@{db_data['id_discord']}> ({db_data['pseudo_ingame']}) a quitté le discord et est revenu.")
                         Leave += 1
                     if response.status_code != 200:
                         await data_bot.send(f"Le joueur <@{db_data['id_discord']}> ({db_data['pseudo_ingame']}) provoque un crash de l'API NationsGlory.")
@@ -567,7 +597,7 @@ class Debug(commands.Cog):
             jours_deco = (date.today() - datetime.datetime.fromisoformat(api_data["last_connection"]).date()).days
             cur.execute("UPDATE recrutement SET last_connection=? WHERE id_discord=?", [jours_deco, db_data["id_discord"]])
 
-            if jours_deco >= 5 and db_data["absence_fin"] is None:
+            if jours_deco >= 10 and db_data["absence_fin"] is None:
                 try:
                     await data_bot.send(f"L'utilisateur {db_data['pseudo_ingame']} ({user.mention}) est absent depuis {jours_deco} jours.")
                 except Forbidden:
@@ -589,6 +619,8 @@ class Debug(commands.Cog):
                 grade = "Offi"
             elif db_data["grade"] == 6:
                 grade = "Gouverneur"
+            elif db_data["grade"] == 7:
+                grade = "Second"
             else:
                 grade = "Candidat"
             try:
