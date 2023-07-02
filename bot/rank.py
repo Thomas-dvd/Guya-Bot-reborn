@@ -3,8 +3,6 @@ import json
 from datetime import date, timedelta, datetime
 
 import pytz
-from PIL import Image
-from discord.ui import Modal, InputText, View, Button
 
 # from Merge_Pictures import merge_image
 
@@ -854,7 +852,7 @@ class Rank(commands.Cog):
             if data_executant[5] < 5:
                 await ctx.respond(f"Tu n'es pas assez haut gradé pour supporter le rank up de {user.mention}")
                 return
-            embed = utils.create_embed(self.bot, f"Rank-up de {data_cible[2]} Membre confirmé",
+            embed = utils.create_embed(self.bot, f"Rank-up de {data_cible[2]} Officier",
                                        description=f"Tout les officiers doivent voté pour (:yes:) ou contre (:no:) a ce rank-up. Si le vote des gouverneurs est unanime, il permet de bypasser l'autre vote.",
                                        color=Color.green())
             embed.add_field(name="Début de la procédure :", value=f"{datetime.now()}")
@@ -862,7 +860,7 @@ class Rank(commands.Cog):
             embed.add_field(name="Proposé au rank-up par :", value=f"{ctx.user.mention}")
             embed.add_field(name="Pseudo IG :", value=f"{data_cible[2]}")
             embed.add_field(name="Rank-up vers :", value=f"Officier")
-            msg = await rank_membre_confirmes.send(embed=embed)
+            msg = await rank_officiers.send(embed=embed)
             await msg.add_reaction(yes)
             await msg.add_reaction(no)
 

@@ -438,7 +438,7 @@ class ConfirmePseudoRecrutementView(View):
 
         if temp is not None:
             cur.execute("DELETE FROM recrutement WHERE id_discord=?", [data["id_discord"]])
-            cur.close()
+            self.bot.countrydb.commit()
 
         cur.execute(
             "INSERT INTO recrutement (id_discord, pseudo_ingame, annee_naissance, experience, pays, date_recrutement) VALUES (:id_discord, :pseudo_ingame, :annee_naissance, :experience, :pays, :date_recrutement)", data)
@@ -559,7 +559,7 @@ class PingView(View):
             await interaction.user.add_roles(interaction.guild.get_role(config["roles"]["grades"]["frontier_recrutement"]))
             hub_recrutement = interaction.guild.get_channel(config["channels"]["hub_recrutement"])
             await hub_recrutement.send(
-                f"Tu a finit de te faire enregistrer {interaction.user.mention}. Tu va maintenant devoir vocal avec un <@&{config['roles']['grades']['officier']}>, n'hésite pas a dire quand tu est disponible ci-dessous 👇.")
+                f"Tu a finit de te faire enregistrer {interaction.user.mention}. Tu va maintenant devoir vocal avec un <@&{config['roles']['grades']['recruteur']}>, n'hésite pas a dire quand tu est disponible ci-dessous 👇.")
             await interaction.channel.delete()
 
 
