@@ -1253,7 +1253,7 @@ class Rank(commands.Cog):
                             embed.add_field(name="Proposé au rank-up par :", value=f"{user_executant}")
                             embed.add_field(name="Pseudo IG :", value=f"{data['pseudo_ingame']}")
                             embed.add_field(name="Rank-up vers :", value=f"Membre (vote)")
-                            msg = await officier.send(embed=embed)
+                            msg = await membre_confirme.send(embed=embed)
                             await msg.add_reaction(yes)
                             await msg.add_reaction(no)
                             await message.delete()
