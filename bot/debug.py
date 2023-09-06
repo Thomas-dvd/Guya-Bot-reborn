@@ -124,15 +124,27 @@ class Debug(commands.Cog):
                     return
 
                 if "error" in response.json():
-                    await user.edit(nick=f"{valeur}")
+                    try:
+                        await user.edit(nick=f"{valeur}")
+                    except discord.errors.Forbidden:
+                        self.bot.worlddb.commit()
+                        cur.close()
+                        await ctx.respond(f"La donnée {donnees} du joueur {user.mention} a bien été définit sur ``{valeur}``. **Impossible cependant pour le bot de le rename.**")
+                        return
                 else:
                     user_grade = cur.execute("SELECT grade FROM recrutement WHERE pseudo_ingame =?", [valeur]).fetchone()[0]
                     grade_list = ["Candidat", "Recrue", "Recrue+", "Membre", "Membre+", "Officier", "Gouverneur"]
                     user_grade = grade_list[user_grade]
-                    if len(f"{user_grade} | {valeur}") <= 32:
-                        await user.edit(nick=f"{user_grade} | {valeur}")
-                    else:
-                        await user.edit(nick=f"{valeur}")
+                    try:
+                        if len(f"{user_grade} | {valeur}") <= 32:
+                            await user.edit(nick=f"{user_grade} | {valeur}")
+                        else:
+                            await user.edit(nick=f"{valeur}")
+                    except discord.errors.Forbidden:
+                        self.bot.worlddb.commit()
+                        cur.close()
+                        await ctx.respond(f"La donnée {donnees} du joueur {user.mention} a bien été définit sur ``{valeur}``. **Impossible cependant pour le bot de le rename.**")
+                        return
 
             if donnees == "Age":
                 cur.execute(f"UPDATE recrutement SET annee_naissance=? WHERE id_discord=?", [valeur, user.id])
@@ -161,7 +173,7 @@ class Debug(commands.Cog):
             self.bot.countrydb.commit()
             cur.close()
 
-        else:
+        else: #BDD diplomatie
             cur = self.bot.worlddb.cursor()
             cur.execute("SELECT * FROM diplomatie WHERE id_discord=?", [user.id])
             temp = cur.fetchone()
@@ -186,10 +198,17 @@ class Debug(commands.Cog):
 
                 if "error" in response.json():
                     if response.json()["error"] == "unknown.user":
-                        if len(f"Unlink | {valeur}") <= 32:
-                            await user.edit(nick=f"Unlink | {valeur}")
-                        elif len(f"{valeur}") <= 32:
-                            await user.edit(nick=f"{valeur}")
+                        try:
+                            if len(f"Unlink | {valeur}") <= 32:
+                                await user.edit(nick=f"Unlink | {valeur}")
+                            elif len(f"{valeur}") <= 32:
+                                await user.edit(nick=f"{valeur}")
+                        except discord.errors.Forbidden:
+                            self.bot.worlddb.commit()
+                            cur.close()
+                            await ctx.respond(
+                                f"La donnée {donnees} du joueur {user.mention} a bien été définit sur ``{valeur}``. **Impossible cependant pour le bot de le rename.**")
+                            return
                     else:
                         await ctx.respond(f"Nous avons rencontrer une erreur technique, nous somme navré du désagrément, tu veut bien re essayer s'il te plait ?")
                         return
@@ -200,12 +219,18 @@ class Debug(commands.Cog):
                         "country": response.json()["servers"]["green"]["country"],
                         "country_rank": response.json()["servers"]["green"]["country_rank"],
                     }
-                    if len(f"{api_data['country']} | {api_data['username']} ({api_data['country_rank']})") <= 32:
-                        await user.edit(nick=f"{api_data['country']} | {api_data['username']} ({api_data['country_rank']})")
-                    elif len(f"{api_data['country']} | {api_data['username']}") <= 32:
-                        await user.edit(nick=f"{api_data['country']} | {api_data['username']}")
-                    else:
-                        await user.edit(nick=f"{api_data['username']}")
+                    try:
+                        if len(f"{api_data['country']} | {api_data['username']} ({api_data['country_rank']})") <= 32:
+                            await user.edit(nick=f"{api_data['country']} | {api_data['username']} ({api_data['country_rank']})")
+                        elif len(f"{api_data['country']} | {api_data['username']}") <= 32:
+                            await user.edit(nick=f"{api_data['country']} | {api_data['username']}")
+                        else:
+                            await user.edit(nick=f"{api_data['username']}")
+                    except discord.errors.Forbidden:
+                        self.bot.worlddb.commit()
+                        cur.close()
+                        await ctx.respond(f"La donnée {donnees} du joueur {user.mention} a bien été définit sur ``{valeur}``. **Impossible cependant pour le bot de le rename.**")
+                        return
             self.bot.worlddb.commit()
             cur.close()
 
