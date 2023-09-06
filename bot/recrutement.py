@@ -44,7 +44,9 @@ class Recrutement(commands.Cog):
     # Command /bvn
     @commands.slash_command(description="Permet de finir le recrutement d'un candidat.", default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["recruteur"])
-    async def bvn(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur."), referent: Option(discord.User, "Référent du joueur", required=False), schematique: Option(str, "Schématique du joueur.", required=False),
+    async def bvn(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur."),
+                  referent: Option(discord.User, "Référent du joueur", required=False),
+                  schematique: Option(str, "Schématique du joueur.", required=False),
                   regiment: Option(str, "Régiment du joueur.", choices=config["regiments"], required=False)):
 
         cur = self.bot.countrydb.cursor()
@@ -88,7 +90,8 @@ class Recrutement(commands.Cog):
         await ctx.channel.send(embed=embed)
 
         channel_gg = guild.get_channel(config["channels"]["rank_uwu"])
-        msg = await channel_gg.send(f"Félicitation à {user.mention} qui passe Nouvelle recrue. Bienvenue à lui dans le pays ! 🎉")
+        msg = await channel_gg.send(
+            f"Félicitation à {user.mention} qui passe Nouvelle recrue. Bienvenue à lui dans le pays ! 🎉")
         emoji = self.bot.get_emoji(config["emoji_bellow_rank_message"])
         await msg.add_reaction(emoji)
 
@@ -97,10 +100,12 @@ class Recrutement(commands.Cog):
         await channel_general.send(f"La personne qui ce chargera de le guider au sain du pays est {referent.mention}")
 
     # Command /remove-user
-    @commands.slash_command(name="remove-user", description="Permet d'effacer un joueur de la base de données", default_permission=False)
+    @commands.slash_command(name="remove-user", description="Permet d'effacer un joueur de la base de données",
+                            default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["officier"])
     async def remove_user(self, ctx: discord.ApplicationContext, pseudo: Option(str, "Entre un pseudo IG."),
-                          de: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"], required=False, default="Pays")):
+                          de: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"],
+                                     required=False, default="Pays")):
 
         if de == "Pays":
             cur = self.bot.countrydb.cursor()
@@ -122,7 +127,28 @@ class Recrutement(commands.Cog):
                             await user.edit(nick=None)
                         except discord.errors.Forbidden:
                             pass
-                    await ctx.respond(f"<@{user_id}> a correctement été supprimer de la base de données. **Ces grades ne lui pas été retirés !**")
+                        erreur = 0
+                        await ctx.defer()
+                        for role in user.roles:
+                            try:
+                                if role.name != "@everyone":
+                                    await user.remove_roles(ctx.guild.get_role(role.id))
+                            except discord.errors.Forbidden or discord.errors.NotFound:
+                                erreur = 1
+                        for role in config["roles"]["deco"]["global"]:
+                            await ctx.user.add_roles(ctx.guild.get_role(role))
+                        await ctx.user.add_roles(ctx.guild.get_role(config["roles"]["grades"]["neutre"]))
+                        await ctx.user.add_roles(ctx.guild.get_role(config["roles"]["grades"]["unconfirmed"]))
+                        await ctx.user.add_roles(ctx.guild.get_role(config["roles"]["grades"]["reglement_valider"]))
+                        if erreur == 0:
+                            await ctx.respond(
+                                f"<@{user_id}> a correctement été supprimer de la base de données.")
+                        else:
+                            await ctx.respond(
+                                f"<@{user_id}> a correctement été supprimer de la base de données. **Certains grades ne lui pas été retirés !**")
+                    else:
+                        await ctx.respond(f"{pseudo} a bien été supprimer")
+
             except IntegrityError or TypeError or discord.errors.ApplicationCommandInvokeError:
                 await ctx.respond("Utilisateur absent de la base de données")
             finally:
@@ -141,20 +167,42 @@ class Recrutement(commands.Cog):
                 if cur.fetchone()[0] == 0:
                     await ctx.respond("Utilisateur absent de la base de données")
                 else:
-                    self.bot.worlddb.commit()
+                    self.bot.countrydb.commit()
                     if user is not None:
                         try:
                             await user.edit(nick=None)
                         except discord.errors.Forbidden:
                             pass
-                    await ctx.respond(f"<@{user_id}> a correctement été supprimer de la base de données. **Ces grades ne lui pas été retirés !**")
+                        erreur = 0
+                        await ctx.defer()
+                        for role in user.roles:
+                            try:
+                                if role.name != "@everyone":
+                                    await user.remove_roles(ctx.guild.get_role(role.id))
+                            except discord.errors.Forbidden or discord.errors.NotFound:
+                                erreur = 1
+                        for role in config["roles"]["deco"]["global"]:
+                            await ctx.user.add_roles(ctx.guild.get_role(role))
+                        await ctx.user.add_roles(ctx.guild.get_role(config["roles"]["grades"]["neutre"]))
+                        await ctx.user.add_roles(ctx.guild.get_role(config["roles"]["grades"]["unconfirmed"]))
+                        await ctx.user.add_roles(ctx.guild.get_role(config["roles"]["grades"]["reglement_valider"]))
+                        if erreur == 0:
+                            await ctx.respond(
+                                f"<@{user_id}> a correctement été supprimer de la base de données.")
+                        else:
+                            await ctx.respond(
+                                f"<@{user_id}> a correctement été supprimer de la base de données. **Certains grades ne lui pas été retirés !**")
+                    else:
+                        await ctx.respond(f"{pseudo} a bien été supprimer")
+
             except IntegrityError or TypeError or discord.errors.ApplicationCommandInvokeError:
                 await ctx.respond("Utilisateur absent de la base de données")
             finally:
                 cur.close()
 
     # Command /confirme-diplomate
-    @commands.slash_command(name="confirme-diplomate", description="Permet de terminer l'enregistrement d'un diplomate", default_permission=False)
+    @commands.slash_command(name="confirme-diplomate", description="Permet de terminer l'enregistrement d'un diplomate",
+                            default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["officier"])
     async def confirme_diplomate(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un pseudo.")):
 
@@ -167,7 +215,8 @@ class Recrutement(commands.Cog):
         await ctx.channel.delete()
 
     # Command /start-register
-    @commands.slash_command(name="start-register", description="Commencer un enregistrement comme si on venait de rejoindre le discord")
+    @commands.slash_command(name="start-register",
+                            description="Commencer un enregistrement comme si on venait de rejoindre le discord")
     async def start_register(self, ctx: discord.ApplicationContext):
         if ctx.channel.id != config["channels"]["unregister"]:
             await ctx.respond(f"Cette commande ne peu pas être faite ici !")
@@ -183,7 +232,8 @@ class Recrutement(commands.Cog):
             member: discord.PermissionOverwrite(view_channel=True),
             guild.get_role(config["roles"]["grades"]["recruteur"]): discord.PermissionOverwrite(view_channel=True)
         }
-        channel = await guild.create_text_channel(name=f"{member.display_name}", category=recrutement_category, overwrites=overwrites)
+        channel = await guild.create_text_channel(name=f"{member.display_name}", category=recrutement_category,
+                                                  overwrites=overwrites)
 
         embed = utils.create_embed(self.bot, title="**Bonjour, bienvenue sur le discord de la GDE !**",
                                    description=f"Je suis le bot en charge du discord. C'est dans ce channel que tu vas te faire enregistrer. Après 48h d'inactivité, ce channel sera automatiquement supprimer.\n\nEn premier lieu, je t'invite a lire le règlement. Je pense qu'il n'y a pas raison de beaucoup écrire la dessus. Vous connaissez les normes \"classique\" :\n> ╰Toujours resté poli\n> ╰Pseudo et photo de profil correcte\n> ╰Pas de NSFW\n> ╰Respect des autres\n> ╰Pas de spam\n> ╰Pas de GhostPing. \n> ╰En cas de problème on vas voir les plus hauts grades\n \n**Si tout ceci est claire, je t'invite a cliqué sur le bouton ci-dessous**",
@@ -192,7 +242,8 @@ class Recrutement(commands.Cog):
         await channel.send(f"{member.mention}", delete_after=0)
 
     # Command /fc-channels-recrutements
-    @commands.slash_command(description="Lance immédiatement le check des salons de recrutement inactifs", default_permission=False, name="fc-channels-recrutements")
+    @commands.slash_command(description="Lance immédiatement le check des salons de recrutement inactifs",
+                            default_permission=False, name="fc-channels-recrutements")
     @commands.has_any_role(config["roles"]["grades"]["officier"])
     async def force_check_channels_recrutements(self, ctx: discord.ApplicationContext):
         await ctx.respond("Check des salons de recrutements afk lancer")
@@ -213,7 +264,8 @@ class Recrutement(commands.Cog):
             member: discord.PermissionOverwrite(view_channel=True),
             guild.get_role(config["roles"]["grades"]["recruteur"]): discord.PermissionOverwrite(view_channel=True)
         }
-        channel = await guild.create_text_channel(name=f"{member.display_name}", category=recrutement_category, overwrites=overwrites)
+        channel = await guild.create_text_channel(name=f"{member.display_name}", category=recrutement_category,
+                                                  overwrites=overwrites)
 
         embed = utils.create_embed(self.bot, title="**Bonjour, bienvenue sur le discord de la GDE !**",
                                    description=f"Je suis le bot en charge du discord. C'est dans ce channel que tu vas te faire enregistrer. Après 48h d'inactivité, ce channel sera automatiquement supprimer.\n\nEn premier lieu, je t'invite a lire le règlement. Je pense qu'il n'y a pas raison de beaucoup écrire la dessus. Vous connaissez les normes \"classique\" :\n> ╰Toujours resté poli\n> ╰Pseudo et photo de profil correcte\n> ╰Pas de NSFW\n> ╰Respect des autres\n> ╰Pas de spam\n> ╰Pas de GhostPing. \n> ╰En cas de problème on vas voir les plus hauts grades\n \n**Si tout ceci est claire, je t'invite a cliqué sur le bouton ci-dessous**",
@@ -235,7 +287,8 @@ class Recrutement(commands.Cog):
         data_log = guild.get_channel(config["channels"]["data_log"])
         supprimer = 0
         afk = 0
-        with tqdm(total=len(channels), unit="member", ascii="⬡⬢", bar_format='{l_bar}{bar:25}{r_bar}{bar:-10b}', desc="Vérification des channels inactifs ") as line1:
+        with tqdm(total=len(channels), unit="member", ascii="⬡⬢", bar_format='{l_bar}{bar:25}{r_bar}{bar:-10b}',
+                  desc="Vérification des channels inactifs ") as line1:
             bar = await data_log.send(line1)
             for category in channels:
                 channel = guild.get_channel(category.id)
@@ -243,9 +296,11 @@ class Recrutement(commands.Cog):
                     messages = await channel.history(limit=1).flatten()
                     last_message_date = messages[0].created_at.astimezone(pytz.utc)
                     delay = datetime.datetime.now(pytz.utc) - last_message_date
-                    if delay >= timedelta(days=1) and (channel.id not in config["channels"]["admin_channels_from_recrutement_category"]):
+                    if delay >= timedelta(days=1) and (
+                            channel.id not in config["channels"]["admin_channels_from_recrutement_category"]):
                         try:
-                            if (messages[0].author.id != self.bot.user.id) or (messages[0].embeds[0].to_dict()["fields"][0]["value"] != "AFK depuis 24h"):
+                            if (messages[0].author.id != self.bot.user.id) or (
+                                    messages[0].embeds[0].to_dict()["fields"][0]["value"] != "AFK depuis 24h"):
                                 embed = utils.create_embed(self.bot, title="**Channel inactif !**",
                                                            description=f"Aucun message n'a été envoyer dans ce channel depuis 24h, Si aucun message n'est envoyé dans les 24h prochaines heures, ce channel sera supprimer.",
                                                            color=Color.gold())
@@ -265,7 +320,8 @@ class Recrutement(commands.Cog):
 
                 line1.update(1)
                 await bar.edit(content=line1)
-        await data_log.send(f"Vérification des channels inactifs terminé ! ``{afk}`` salons supplémentaires ont été mis comme AFK et ``{supprimer}`` ont été supprimés !")
+        await data_log.send(
+            f"Vérification des channels inactifs terminé ! ``{afk}`` salons supplémentaires ont été mis comme AFK et ``{supprimer}`` ont été supprimés !")
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -278,7 +334,8 @@ class ReglementView(View):
         super().__init__(timeout=None)
         self.bot = bot
 
-    @discord.ui.button(label="Valider le règlement", style=discord.ButtonStyle.green, emoji="✅", custom_id="button-confirm")
+    @discord.ui.button(label="Valider le règlement", style=discord.ButtonStyle.green, emoji="✅",
+                       custom_id="button-confirm")
     async def button_callback(self, button, interaction):
         guild = self.bot.get_guild(config["guild_id"])
 
@@ -303,11 +360,13 @@ class DirectionSwitcherView(View):
         super().__init__(timeout=None)
         self.bot = bot
 
-    @discord.ui.button(label="Recrutement", style=discord.ButtonStyle.secondary, emoji="📑", custom_id="button-recrutement")
+    @discord.ui.button(label="Recrutement", style=discord.ButtonStyle.secondary, emoji="📑",
+                       custom_id="button-recrutement")
     async def recrutement_button_callback(self, button, interaction):
         await interaction.response.send_modal(RecrutementRegisterModal(self.bot))
 
-    @discord.ui.button(label="Diplomatie", style=discord.ButtonStyle.secondary, emoji="🕊️", custom_id="button-diplomatie")
+    @discord.ui.button(label="Diplomatie", style=discord.ButtonStyle.secondary, emoji="🕊️",
+                       custom_id="button-diplomatie")
     async def diplomatie_button_callback(self, button, interaction):
         await interaction.response.send_modal(DiplomatieRegisterModal(self.bot))
 
@@ -317,7 +376,8 @@ class ConfirmePseudoDiplomatieView(View):
         super().__init__(timeout=None)
         self.bot = bot
 
-    @discord.ui.button(label="C'est bien moi", style=discord.ButtonStyle.green, emoji="✔️", custom_id="button-confirmepseudodiplomatie")
+    @discord.ui.button(label="C'est bien moi", style=discord.ButtonStyle.green, emoji="✔️",
+                       custom_id="button-confirmepseudodiplomatie")
     async def confirme_pseudo_button_callback(self, button, interaction):
 
         # Récup le pseudo du joueur et son pays
@@ -342,7 +402,8 @@ class ConfirmePseudoDiplomatieView(View):
                 data["country_rank"] = " "
 
         else:
-            embed = utils.create_embed(self.bot, f"**Erreur technique**", description=f"Nous avons rencontrer une erreur technique, nous somme navré du désagrément, tu veut bien re essayer s'il te plait ?")
+            embed = utils.create_embed(self.bot, f"**Erreur technique**",
+                                       description=f"Nous avons rencontrer une erreur technique, nous somme navré du désagrément, tu veut bien re essayer s'il te plait ?")
             await interaction.channel.send(embed=embed)
             return
 
@@ -398,7 +459,8 @@ class ConfirmePseudoDiplomatieView(View):
         embed.add_field(name=f"Statut :", value="Diplomate", inline=True)
         await interaction.channel.send(embed=embed, view=PingView(self.bot))
 
-    @discord.ui.button(label="Entrée un autre pseudo", style=discord.ButtonStyle.danger, emoji="✏️", custom_id="button-editDiplomatie")
+    @discord.ui.button(label="Entrée un autre pseudo", style=discord.ButtonStyle.danger, emoji="✏️",
+                       custom_id="button-editDiplomatie")
     async def edit_diplomatie_button_callback(self, button, interaction):
         await interaction.response.send_modal(DiplomatieRegisterModal(self.bot))
 
@@ -408,7 +470,8 @@ class ConfirmePseudoRecrutementView(View):
         super().__init__(timeout=None)
         self.bot = bot
 
-    @discord.ui.button(label="C'est bien moi", style=discord.ButtonStyle.green, emoji="✔️", custom_id="button-confirmepseudorecrutement")
+    @discord.ui.button(label="C'est bien moi", style=discord.ButtonStyle.green, emoji="✔️",
+                       custom_id="button-confirmepseudorecrutement")
     async def confirme_pseudo_recru_button_callback(self, button, interaction):
 
         # Récup le pseudo du joueur et son pays
@@ -441,7 +504,8 @@ class ConfirmePseudoRecrutementView(View):
             self.bot.countrydb.commit()
 
         cur.execute(
-            "INSERT INTO recrutement (id_discord, pseudo_ingame, annee_naissance, experience, pays, date_recrutement) VALUES (:id_discord, :pseudo_ingame, :annee_naissance, :experience, :pays, :date_recrutement)", data)
+            "INSERT INTO recrutement (id_discord, pseudo_ingame, annee_naissance, experience, pays, date_recrutement) VALUES (:id_discord, :pseudo_ingame, :annee_naissance, :experience, :pays, :date_recrutement)",
+            data)
         self.bot.countrydb.commit()
         cur.close()
 
@@ -473,7 +537,8 @@ class ConfirmePseudoRecrutementView(View):
         embed.add_field(name=f"Statut :", value="Candidat", inline=True)
         await interaction.channel.send(embed=embed, view=PingView(self.bot))
 
-    @discord.ui.button(label="Entrée un autre pseudo", style=discord.ButtonStyle.danger, emoji="✏️", custom_id="button-editRecrutement")
+    @discord.ui.button(label="Entrée un autre pseudo", style=discord.ButtonStyle.danger, emoji="✏️",
+                       custom_id="button-editRecrutement")
     async def edit_recrutement_button_callback(self, button, interaction):
         await interaction.response.send_modal(RecrutementRegisterModal(self.bot))
 
@@ -519,7 +584,8 @@ class PingView(View):
             await interaction.user.remove_roles(guild.get_role(config["roles"]["pings"]["media"]))
         await interaction.response.edit_message(view=self)
 
-    @discord.ui.button(label="Secondaire", style=discord.ButtonStyle.secondary, emoji="🧶", custom_id="button-secondaire")
+    @discord.ui.button(label="Secondaire", style=discord.ButtonStyle.secondary, emoji="🧶",
+                       custom_id="button-secondaire")
     async def secondaire_button_callback(self, button, interaction):
         guild = self.bot.get_guild(config["guild_id"])
 
@@ -552,11 +618,13 @@ class PingView(View):
                             value="> ╰Allié : Si tu est en bon terme avec notre faction, tu peu récupérer ce grade pour obtenir les accès sur l'espace publique GDE.\n> ╰Colonie : Si tu a été coloniser par un de nos pays, tu peu demander ce grade, purement décoratif.\n> ╰Amis : Pour les amis des membres du pays, sort de grade Allié++, donne des accès sur le discord semblable a une recrue confirmé.\n> ╰Confiance : Pour les personne de toute confiance (anciens officiers, etc), donne des accès sur le discord semblable a un officier.",
                             inline=True)
             embed.add_field(name="Grades médailles que tu peu obtenir :",
-                            value="> ╰Stp drop un red (alias OP green) : Pour les Super-Modo et Administrateurs du Green.\n> ╰Modo : Pour les Modo du Green.\n> ╰Guide : Pour les Guides du Green.", inline=True)
+                            value="> ╰Stp drop un red (alias OP green) : Pour les Super-Modo et Administrateurs du Green.\n> ╰Modo : Pour les Modo du Green.\n> ╰Guide : Pour les Guides du Green.",
+                            inline=True)
             await interaction.channel.send(embed=embed)
 
         if interaction.message.embeds[0].to_dict()["fields"][0]["value"] == "Candidat":
-            await interaction.user.add_roles(interaction.guild.get_role(config["roles"]["grades"]["frontier_recrutement"]))
+            await interaction.user.add_roles(
+                interaction.guild.get_role(config["roles"]["grades"]["frontier_recrutement"]))
             hub_recrutement = interaction.guild.get_channel(config["channels"]["hub_recrutement"])
             await hub_recrutement.send(
                 f"Tu a finit de te faire enregistrer {interaction.user.mention}. Tu va maintenant devoir vocal avec un <@&{config['roles']['grades']['recruteur']}>, n'hésite pas a dire quand tu est disponible ci-dessous 👇.")
@@ -569,15 +637,21 @@ class RecrutementRegisterModal(Modal):
         self.bot = bot
         super().__init__(title="Enregistrement")
         self.add_item(InputText(label="Pseudo en jeu", placeholder="Tominix356"))
-        self.add_item(InputText(label="Âge (\"-1\" pour ne pas le donner)", placeholder="18", style=discord.InputTextStyle.short, min_length=1, max_length=3))
-        self.add_item(InputText(label="Expérience sur NG", placeholder="Mon expérience...", style=discord.InputTextStyle.long))
+        self.add_item(
+            InputText(label="Âge (\"-1\" pour ne pas le donner)", placeholder="18", style=discord.InputTextStyle.short,
+                      min_length=1, max_length=3))
+        self.add_item(
+            InputText(label="Expérience sur NG", placeholder="Mon expérience...", style=discord.InputTextStyle.long))
 
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.defer()
         data = {
             "id_discord": interaction.user.id,
             "pseudo_ingame": self.children[0].value,
-            "annee_naissance": (date.today().year - int(self.children[1].value)) if self.children[1].value.isnumeric() and self.children[1].value != "-1" else -1,
+            "annee_naissance": (date.today().year - int(self.children[1].value)) if self.children[
+                                                                                        1].value.isnumeric() and
+                                                                                    self.children[
+                                                                                        1].value != "-1" else -1,
             "experience": self.children[2].value,
             "date_recrutement": date.today()
         }
@@ -592,14 +666,16 @@ class RecrutementRegisterModal(Modal):
         cur.execute("SELECT count(*) FROM diplomatie WHERE id_discord=?", [data["id_discord"]])
         find = cur.fetchone()
         if not find[0] == 0:
-            await interaction.followup.send("Ce compte discord est déjà enregistré dans nos registre de diplomatie ! Merci de prendre contacte avec un officier.")
+            await interaction.followup.send(
+                "Ce compte discord est déjà enregistré dans nos registre de diplomatie ! Merci de prendre contacte avec un officier.")
             cur.close()
             return
 
         cur.execute("SELECT count(*) FROM diplomatie WHERE pseudo_ingame=?", [data["pseudo_ingame"]])
         find = cur.fetchone()
         if not find[0] == 0:
-            await interaction.followup.send("Ce pseudo IG est déjà enregistré dans nos registre de diplomatie ! Merci de prendre contacte avec un officier.")
+            await interaction.followup.send(
+                "Ce pseudo IG est déjà enregistré dans nos registre de diplomatie ! Merci de prendre contacte avec un officier.")
             cur.close()
             return
 
@@ -610,7 +686,8 @@ class RecrutementRegisterModal(Modal):
         cur.execute("SELECT count(*) FROM recrutement WHERE pseudo_ingame=?", [data["pseudo_ingame"]])
         find = cur.fetchone()
         if not find[0] == 0:
-            await interaction.followup.send("Ce pseudo ingame est déjà enregistré dans nos registre de recrutement ! Merci de prendre contacte avec un officier.")
+            await interaction.followup.send(
+                "Ce pseudo ingame est déjà enregistré dans nos registre de recrutement ! Merci de prendre contacte avec un officier.")
             cur.close()
             return
 
@@ -624,7 +701,8 @@ class RecrutementRegisterModal(Modal):
         response = requests.get(f'https://publicapi.nationsglory.fr/user/{data["pseudo_ingame"]}', headers=headers)
 
         if response.status_code != 200:
-            embed = utils.create_embed(self.bot, f"**Erreur technique**", description=f"Nous avons rencontrer une erreur technique, nous somme navré du désagrément, tu veut bien re essayer s'il te plait ?")
+            embed = utils.create_embed(self.bot, f"**Erreur technique**",
+                                       description=f"Nous avons rencontrer une erreur technique, nous somme navré du désagrément, tu veut bien re essayer s'il te plait ?")
             await interaction.followup.send(embed=embed)
             return
 
@@ -639,7 +717,8 @@ class RecrutementRegisterModal(Modal):
                 embed.add_field(name="Experience :", value=f"{data['experience']}")
                 await interaction.followup.send(embed=embed, view=ConfirmePseudoRecrutementView(self.bot))
             else:
-                embed = utils.create_embed(self.bot, f"**Erreur technique**", description=f"Nous avons rencontrer une erreur technique, nous somme navré du désagrément, tu veut bien re essayer s'il te plait ?")
+                embed = utils.create_embed(self.bot, f"**Erreur technique**",
+                                           description=f"Nous avons rencontrer une erreur technique, nous somme navré du désagrément, tu veut bien re essayer s'il te plait ?")
                 await interaction.followup.send(embed=embed)
             return
 
@@ -652,7 +731,8 @@ class RecrutementRegisterModal(Modal):
         embed = utils.create_embed(self.bot, f"**Vérification**", description=f"Es ce bien toi ?")
         embed.add_field(name="Statut :", value=f"Joueur reconnu")
         embed.add_field(name="Pseudo IG :", value=f"{api_data['username']}")
-        embed.add_field(name="Age :", value=f"{int(self.children[1].value) if self.children[1].value.isnumeric() and self.children[1].value != '-1' else -1}")
+        embed.add_field(name="Age :",
+                        value=f"{int(self.children[1].value) if self.children[1].value.isnumeric() and self.children[1].value != '-1' else -1}")
         embed.add_field(name="Experience :", value=f"{data['experience']}")
         embed.add_field(name="Pays :", value=f"{api_data['country']}")
         embed.add_field(name="Grade :", value=f"{api_data['country_rank']}")
@@ -683,14 +763,16 @@ class DiplomatieRegisterModal(Modal):
         cur.execute("SELECT count(*) FROM recrutement WHERE id_discord=?", [data["id_discord"]])
         find = cur.fetchone()
         if not find[0] == 0:
-            await interaction.followup.send("Ce compte discord est déjà enregistré dans nos registre de pays ! Merci de prendre contacte avec un officier.")
+            await interaction.followup.send(
+                "Ce compte discord est déjà enregistré dans nos registre de pays ! Merci de prendre contacte avec un officier.")
             cur.close()
             return
 
         cur.execute("SELECT count(*) FROM recrutement WHERE pseudo_ingame=?", [data["pseudo_ingame"]])
         find = cur.fetchone()
         if not find[0] == 0:
-            await interaction.followup.send("Ce pseudo IG est déjà enregistré dans nos registre de pays ! Merci de prendre contacte avec un officier.")
+            await interaction.followup.send(
+                "Ce pseudo IG est déjà enregistré dans nos registre de pays ! Merci de prendre contacte avec un officier.")
             cur.close()
             return
 
@@ -704,7 +786,8 @@ class DiplomatieRegisterModal(Modal):
         response = requests.get(f'https://publicapi.nationsglory.fr/user/{data["pseudo_ingame"]}', headers=headers)
 
         if response.status_code != 200:
-            embed = utils.create_embed(self.bot, f"**Erreur technique**", description=f"Nous avons rencontrer une erreur technique, nous somme navré du désagrément, tu veut bien re essayer s'il te plait ?")
+            embed = utils.create_embed(self.bot, f"**Erreur technique**",
+                                       description=f"Nous avons rencontrer une erreur technique, nous somme navré du désagrément, tu veut bien re essayer s'il te plait ?")
             await interaction.followup.send(embed=embed)
             return
 
@@ -717,7 +800,8 @@ class DiplomatieRegisterModal(Modal):
                 embed.add_field(name="Pseudo IG :", value=f"{data['pseudo_ingame']}")
                 await interaction.followup.send(embed=embed, view=ConfirmePseudoDiplomatieView(self.bot))
             else:
-                embed = utils.create_embed(self.bot, f"**Erreur technique**", description=f"Nous avons rencontrer une erreur technique, nous somme navré du désagrément, tu veut bien re essayer s'il te plait ?")
+                embed = utils.create_embed(self.bot, f"**Erreur technique**",
+                                           description=f"Nous avons rencontrer une erreur technique, nous somme navré du désagrément, tu veut bien re essayer s'il te plait ?")
                 await interaction.followup.send(embed=embed)
             return
 
