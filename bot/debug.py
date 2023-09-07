@@ -40,10 +40,7 @@ class Debug(commands.Cog):
     # Command /informations
     @commands.slash_command(description="Donne toute les informations d'une personne", default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["officier"])
-    async def informations(self, ctx: discord.ApplicationContext,
-                           user: Option(discord.User, "Entre un utilisateur.", required=True),
-                           de: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"],
-                                      required=False, default="Pays")):
+    async def informations(self, ctx: discord.ApplicationContext,user: Option(discord.User, "Entre un utilisateur.", required=True),de: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"],required=False, default="Pays")):
 
         if de == "Pays":
             cur = self.bot.countrydb.cursor()
@@ -94,8 +91,7 @@ class Debug(commands.Cog):
     # Command /edit
     @commands.slash_command(description="Donne toute les informations d'une personne", default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["officier"])
-    async def edit(self, ctx: discord.ApplicationContext,
-                   user: Option(discord.User, "Entre un utilisateur.", required=True), donnees: Option(str,"Paramètre a modifier (Ceux marquer d'une * sont disponible pour les diplomaties.", choices=["* ID Système","*ID Discord","*Pseudo IG","Age","Experience","Grade","Pays","Peut quitter le pays","Date recrutement","Ancienneté","Schématique","Régiment","Dernière connexion","Fin d'absence","Référent"]),valeur: Option(str, "Nouvelle valeur (None pour Null).", required=True),de: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"], required=False,default="Pays")):
+    async def edit(self, ctx: discord.ApplicationContext,user: Option(discord.User, "Entre un utilisateur.", required=True), donnees: Option(str,"Paramètre a modifier (Ceux marquer d'une * sont disponible pour les diplomaties.", choices=["* ID Système","*ID Discord","*Pseudo IG","Age","Experience","Grade","Pays","Peut quitter le pays","Date recrutement","Ancienneté","Schématique","Régiment","Dernière connexion","Fin d'absence","Référent"]),valeur: Option(str, "Nouvelle valeur (None pour Null).", required=True),de: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"], required=False,default="Pays")):
 
         if donnees in ["*ID Système", "ID Discord", "Age", "Grade", "Peut quitter pays", "Ancienneté", "Dernière connexion"]:
             valeur = int(valeur)
@@ -251,8 +247,7 @@ class Debug(commands.Cog):
 
     # Command /transfert
     @commands.slash_command(description="Transfert un joueur de base de donnée.", default_permission=False)
-    async def transfert(self, ctx: discord.ApplicationContext,
-                        user: Option(discord.User, "Entre un utilisateur.", required=True)):
+    async def transfert(self, ctx: discord.ApplicationContext,user: Option(discord.User, "Entre un utilisateur.", required=True)):
 
         cur = self.bot.countrydb.cursor()
         temp = cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [user.id]).fetchone()
@@ -304,11 +299,7 @@ class Debug(commands.Cog):
 
     # Command /create_user
     @commands.slash_command(name="create-user", description="Crée un utilisateur.", default_permission=False)
-    async def create_user(self, ctx: discord.ApplicationContext,
-                          user: Option(discord.User, "Entre un utilisateur.", required=True),
-                          pseudo: Option(str, "pseudo IG.", required=True),
-                          dans: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"],
-                                       required=False, default="Pays")):
+    async def create_user(self, ctx: discord.ApplicationContext,user: Option(discord.User, "Entre un utilisateur.", required=True),pseudo: Option(str, "pseudo IG.", required=True),dans: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"],required=False, default="Pays")):
 
         if dans == "Pays":
             data = {
@@ -340,11 +331,8 @@ class Debug(commands.Cog):
                 f"L'utilisateur {user.mention} a bien été enregistrer sous le pseudo ``{pseudo}`` dans la base de donnée diplomatique")
 
     # Command /referent
-    @commands.slash_command(name="référent",
-                            description="Informe sur son référent et les personnes donc on est référent.",
-                            default_permission=False)
-    async def referent(self, ctx: discord.ApplicationContext,
-                       user: Option(discord.User, "Entre un utilisateur.", required=True)):
+    @commands.slash_command(name="référent",description="Informe sur son référent et les personnes donc on est référent.",default_permission=False)
+    async def referent(self, ctx: discord.ApplicationContext,user: Option(discord.User, "Entre un utilisateur.", required=True)):
 
         cur = self.bot.countrydb.cursor()
         temp = cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [user.id]).fetchone()
@@ -388,13 +376,14 @@ class Debug(commands.Cog):
                             value=f"{referent_tier_on}\n{referent_tier_two}\n{referent_tier_three}\n{referent_tier_four}")
 
         temp = cur.execute("SELECT id_discord FROM recrutement WHERE referent=?", [user.id]).fetchall()
-        if temp is None:
-            text = "Référent de personne"
-        else:
 
-            text = ""
-            for i in range(len(temp)):
-                text += f"<@{temp[i][0]}> "
+        text = ""
+        for i in range(len(temp)):
+            text += f"<@{temp[i][0]}> "
+
+        if text == "":
+            text = "Référent de personne"
+
         embed.add_field(name="Responsable de :", value=f"{text}")
 
         await ctx.respond(embed=embed)
@@ -430,6 +419,7 @@ class Debug(commands.Cog):
                 "regiment": temp[11],
                 "last_connexion": temp[12],
                 "absence_fin": temp[13],
+                "referent": temp[14]
             }
 
             headers = {
@@ -589,7 +579,8 @@ class Debug(commands.Cog):
                         "schematique": temp[10],
                         "regiment": temp[11],
                         "last_connection": temp[12],
-                        "absence_fin": temp[13]
+                        "absence_fin": temp[13],
+                        "referent": temp[14]
                     }
 
                     headers = {
@@ -707,30 +698,57 @@ class Debug(commands.Cog):
                 pass
 
         # Ancienneté
-        if date.today() - date.fromisoformat(db_data["date_recrutement"]) >= timedelta(days=7) and db_data[
+        if date.today() - date.fromisoformat(db_data["date_recrutement"]) == timedelta(days=1) and db_data[
             "anciennete"] == 0:
             cur.execute("UPDATE recrutement SET anciennete=1 WHERE id_discord=?", [db_data["id_discord"]])
-            # try:
-            #     await user.send(
-            #         f"Félicitation, cela fait maintenant 1 semaine que tu es dans le pays ! tu as automatiquement validé la condition \"ancienneté\" dans les conditions de ranks (plus d'info avec le /player-info)")
-            # except Forbidden:
-            #     pass
-        if date.today() - date.fromisoformat(db_data["date_recrutement"]) >= timedelta(days=31) and db_data[
+            try:
+                referent = guild.get_member(db_data["referent"])
+                await referent.send(
+                    f"Le joueur {user.mention} donc tu es référent est maintenant dans le pays depuis 24h. Envois lui un message pour t'assurer que son intégration se passe bien")
+            except Forbidden:
+                pass
+        if date.today() - date.fromisoformat(db_data["date_recrutement"]) == timedelta(days=3) and db_data[
             "anciennete"] <= 1:
             cur.execute("UPDATE recrutement SET anciennete=2 WHERE id_discord=?", [db_data["id_discord"]])
-            # try:
-            #     await member_guild.send(
-            #         f"Félicitation, cela fait maintenant 1 mois que tu es dans le pays ! tu as automatiquement validé la condition \"ancienneté\" dans les conditions de ranks (plus d'info avec le /player-info)")
-            # except Forbidden:
-            #     pass
-        if date.today() - date.fromisoformat(db_data["date_recrutement"]) >= timedelta(days=90) and db_data[
+            try:
+                referent = guild.get_member(db_data["referent"])
+                await referent.send(
+                    f"Le joueur {user.mention} donc tu es référent est maintenant dans le pays depuis 3 jours. Envois lui un message pour t'assurer que son intégration se passe bien")
+            except Forbidden:
+                pass
+        if date.today() - date.fromisoformat(db_data["date_recrutement"]) == timedelta(days=5) and db_data[
             "anciennete"] <= 2:
             cur.execute("UPDATE recrutement SET anciennete=3 WHERE id_discord=?", [db_data["id_discord"]])
-            # try:
-            #     await member_guild.send(
-            #         f"Félicitation, cela fait maintenant 3 mois que tu es dans le pays ! tu as automatiquement validé la condition \"ancienneté\" dans les conditions de ranks (plus d'info avec le /player-info)")
-            # except Forbidden:
-            #     pass
+            try:
+                referent = guild.get_member(db_data["referent"])
+                await referent.send(
+                    f"Le joueur {user.mention} donc tu es référent est maintenant dans le pays depuis 5 jours. Envois lui un message pour lui rappeler qu'il est maintenant assez ancien pour rank-up.")
+            except Forbidden:
+                pass
+        # if date.today() - date.fromisoformat(db_data["date_recrutement"]) >= timedelta(days=31) and db_data[
+        #     "anciennete"] <= 1:
+        #     cur.execute("UPDATE recrutement SET anciennete=2 WHERE id_discord=?", [db_data["id_discord"]])
+        #     # try:
+        #     #     await member_guild.send(
+        #     #         f"Félicitation, cela fait maintenant 1 mois que tu es dans le pays ! tu as automatiquement validé la condition \"ancienneté\" dans les conditions de ranks (plus d'info avec le /player-info)")
+        #     # except Forbidden:
+        #     #     pass
+        # if date.today() - date.fromisoformat(db_data["date_recrutement"]) >= timedelta(days=5) and db_data[
+        #     "anciennete"] == 0:
+        #     cur.execute("UPDATE recrutement SET anciennete=2 WHERE id_discord=?", [db_data["id_discord"]])
+        #     # try:
+        #     #     await member_guild.send(
+        #     #         f"Félicitation, cela fait maintenant 1 mois que tu es dans le pays ! tu as automatiquement validé la condition \"ancienneté\" dans les conditions de ranks (plus d'info avec le /player-info)")
+        #     # except Forbidden:
+        #     #     pass
+        # if date.today() - date.fromisoformat(db_data["date_recrutement"]) >= timedelta(days=90) and db_data[
+        #     "anciennete"] <= 2:
+        #     cur.execute("UPDATE recrutement SET anciennete=3 WHERE id_discord=?", [db_data["id_discord"]])
+        #     # try:
+        #     #     await member_guild.send(
+        #     #         f"Félicitation, cela fait maintenant 3 mois que tu es dans le pays ! tu as automatiquement validé la condition \"ancienneté\" dans les conditions de ranks (plus d'info avec le /player-info)")
+        #     # except Forbidden:
+        #     #     pass
 
         # Bon pays
         if (not api_data["country"] in config["list_pays"]) and (db_data["peut_quitter_pays"] is None):
