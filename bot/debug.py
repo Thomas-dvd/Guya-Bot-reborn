@@ -40,7 +40,10 @@ class Debug(commands.Cog):
     # Command /informations
     @commands.slash_command(description="Donne toute les informations d'une personne", default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["officier"])
-    async def informations(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=True), de: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"], required=False, default="Pays")):
+    async def informations(self, ctx: discord.ApplicationContext,
+                           user: Option(discord.User, "Entre un utilisateur.", required=True),
+                           de: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"],
+                                      required=False, default="Pays")):
 
         if de == "Pays":
             cur = self.bot.countrydb.cursor()
@@ -91,9 +94,31 @@ class Debug(commands.Cog):
     # Command /edit
     @commands.slash_command(description="Donne toute les informations d'une personne", default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["officier"])
-    async def edit(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=True), donnees: Option(str, "Paramètre a modifier (Ceux marquer d'une * sont disponible pour les diplomaties.", choices=["* ID Système", "*ID Discord", "*Pseudo IG", "Age", "Experience", "Grade", "Pays", "Peut quitter le pays", "Date recrutement", "Ancienneté", "Schématique", "Régiment", "Dernière connexion", "Fin d'absence", "Référent"]), valeur: Option(str, "Nouvelle valeur (None pour Null).", required=True), de: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"], required=False, default="Pays")):
+    async def edit(self, ctx: discord.ApplicationContext,
+                   user: Option(discord.User, "Entre un utilisateur.", required=True), donnees: Option(str,
+                                                                                                       "Paramètre a modifier (Ceux marquer d'une * sont disponible pour les diplomaties.",
+                                                                                                       choices=[
+                                                                                                           "* ID Système",
+                                                                                                           "*ID Discord",
+                                                                                                           "*Pseudo IG",
+                                                                                                           "Age",
+                                                                                                           "Experience",
+                                                                                                           "Grade",
+                                                                                                           "Pays",
+                                                                                                           "Peut quitter le pays",
+                                                                                                           "Date recrutement",
+                                                                                                           "Ancienneté",
+                                                                                                           "Schématique",
+                                                                                                           "Régiment",
+                                                                                                           "Dernière connexion",
+                                                                                                           "Fin d'absence",
+                                                                                                           "Référent"]),
+                   valeur: Option(str, "Nouvelle valeur (None pour Null).", required=True),
+                   de: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"], required=False,
+                              default="Pays")):
 
-        if donnees in ["*ID Système" or "ID Discord" or "Age" or "Grade" or "Peut quitter pays" or "Ancienneté" or "Dernière connexion"]:
+        if donnees in [
+            "*ID Système" or "ID Discord" or "Age" or "Grade" or "Peut quitter pays" or "Ancienneté" or "Dernière connexion"]:
             valeur = int(valeur)
         if valeur in ["None", "none"]:
             valeur = None
@@ -120,7 +145,8 @@ class Debug(commands.Cog):
                 response = requests.get(f'https://publicapi.nationsglory.fr/user/{valeur}', headers=headers)
 
                 if response.status_code != 200:
-                    await ctx.respond(f"Nous avons rencontrer une erreur technique, nous somme navré du désagrément, tu veut bien re essayer s'il te plait ?")
+                    await ctx.respond(
+                        f"Nous avons rencontrer une erreur technique, nous somme navré du désagrément, tu veut bien re essayer s'il te plait ?")
                     return
 
                 if "error" in response.json():
@@ -129,10 +155,12 @@ class Debug(commands.Cog):
                     except discord.errors.Forbidden:
                         self.bot.worlddb.commit()
                         cur.close()
-                        await ctx.respond(f"La donnée {donnees} du joueur {user.mention} a bien été définit sur ``{valeur}``. **Impossible cependant pour le bot de le rename.**")
+                        await ctx.respond(
+                            f"La donnée {donnees} du joueur {user.mention} a bien été définit sur ``{valeur}``. **Impossible cependant pour le bot de le rename.**")
                         return
                 else:
-                    user_grade = cur.execute("SELECT grade FROM recrutement WHERE pseudo_ingame =?", [valeur]).fetchone()[0]
+                    user_grade = \
+                    cur.execute("SELECT grade FROM recrutement WHERE pseudo_ingame =?", [valeur]).fetchone()[0]
                     grade_list = ["Candidat", "Recrue", "Recrue+", "Membre", "Membre+", "Officier", "Gouverneur"]
                     user_grade = grade_list[user_grade]
                     try:
@@ -143,7 +171,8 @@ class Debug(commands.Cog):
                     except discord.errors.Forbidden:
                         self.bot.worlddb.commit()
                         cur.close()
-                        await ctx.respond(f"La donnée {donnees} du joueur {user.mention} a bien été définit sur ``{valeur}``. **Impossible cependant pour le bot de le rename.**")
+                        await ctx.respond(
+                            f"La donnée {donnees} du joueur {user.mention} a bien été définit sur ``{valeur}``. **Impossible cependant pour le bot de le rename.**")
                         return
 
             if donnees == "Age":
@@ -173,7 +202,7 @@ class Debug(commands.Cog):
             self.bot.countrydb.commit()
             cur.close()
 
-        else: #BDD diplomatie
+        else:  # BDD diplomatie
             cur = self.bot.worlddb.cursor()
             cur.execute("SELECT * FROM diplomatie WHERE id_discord=?", [user.id])
             temp = cur.fetchone()
@@ -193,7 +222,8 @@ class Debug(commands.Cog):
                 response = requests.get(f'https://publicapi.nationsglory.fr/user/{valeur}', headers=headers)
 
                 if response.status_code != 200:
-                    await ctx.respond(f"Nous avons rencontrer une erreur technique, nous somme navré du désagrément, tu veut bien re essayer s'il te plait ?")
+                    await ctx.respond(
+                        f"Nous avons rencontrer une erreur technique, nous somme navré du désagrément, tu veut bien re essayer s'il te plait ?")
                     return
 
                 if "error" in response.json():
@@ -210,7 +240,8 @@ class Debug(commands.Cog):
                                 f"La donnée {donnees} du joueur {user.mention} a bien été définit sur ``{valeur}``. **Impossible cependant pour le bot de le rename.**")
                             return
                     else:
-                        await ctx.respond(f"Nous avons rencontrer une erreur technique, nous somme navré du désagrément, tu veut bien re essayer s'il te plait ?")
+                        await ctx.respond(
+                            f"Nous avons rencontrer une erreur technique, nous somme navré du désagrément, tu veut bien re essayer s'il te plait ?")
                         return
 
                 else:
@@ -221,7 +252,8 @@ class Debug(commands.Cog):
                     }
                     try:
                         if len(f"{api_data['country']} | {api_data['username']} ({api_data['country_rank']})") <= 32:
-                            await user.edit(nick=f"{api_data['country']} | {api_data['username']} ({api_data['country_rank']})")
+                            await user.edit(
+                                nick=f"{api_data['country']} | {api_data['username']} ({api_data['country_rank']})")
                         elif len(f"{api_data['country']} | {api_data['username']}") <= 32:
                             await user.edit(nick=f"{api_data['country']} | {api_data['username']}")
                         else:
@@ -229,7 +261,8 @@ class Debug(commands.Cog):
                     except discord.errors.Forbidden:
                         self.bot.worlddb.commit()
                         cur.close()
-                        await ctx.respond(f"La donnée {donnees} du joueur {user.mention} a bien été définit sur ``{valeur}``. **Impossible cependant pour le bot de le rename.**")
+                        await ctx.respond(
+                            f"La donnée {donnees} du joueur {user.mention} a bien été définit sur ``{valeur}``. **Impossible cependant pour le bot de le rename.**")
                         return
             self.bot.worlddb.commit()
             cur.close()
@@ -238,7 +271,8 @@ class Debug(commands.Cog):
 
     # Command /transfert
     @commands.slash_command(description="Transfert un joueur de base de donnée.", default_permission=False)
-    async def transfert(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=True)):
+    async def transfert(self, ctx: discord.ApplicationContext,
+                        user: Option(discord.User, "Entre un utilisateur.", required=True)):
 
         cur = self.bot.countrydb.cursor()
         temp = cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [user.id]).fetchone()
@@ -262,10 +296,13 @@ class Debug(commands.Cog):
                 "date_recrutement": date.today()
             }
             cur = self.bot.countrydb.cursor()
-            cur.execute("INSERT INTO recrutement (id_discord, pseudo_ingame, annee_naissance, experience, date_recrutement) VALUES (:id_discord, :pseudo_ingame, :annee_naissance, :experience, :date_recrutement)", data)
+            cur.execute(
+                "INSERT INTO recrutement (id_discord, pseudo_ingame, annee_naissance, experience, date_recrutement) VALUES (:id_discord, :pseudo_ingame, :annee_naissance, :experience, :date_recrutement)",
+                data)
             self.bot.countrydb.commit()
             cur.close()
-            await ctx.respond(f"L'utilisateur {user.mention} a bien été transférer de la base de donnée diplomatique a celle du pays. Bienvenue a lui dans le pays :wave:")
+            await ctx.respond(
+                f"L'utilisateur {user.mention} a bien été transférer de la base de donnée diplomatique a celle du pays. Bienvenue a lui dans le pays :wave:")
 
         else:
 
@@ -282,11 +319,16 @@ class Debug(commands.Cog):
             cur.execute("DELETE FROM recrutement WHERE id_discord = ?", [user.id])
             self.bot.countrydb.commit()
             cur.close()
-            await ctx.respond(f"L'utilisateur {user.mention} a bien été transférer de la base de donnée de pays a celle de diplomatie.")
+            await ctx.respond(
+                f"L'utilisateur {user.mention} a bien été transférer de la base de donnée de pays a celle de diplomatie.")
 
     # Command /create_user
     @commands.slash_command(name="create-user", description="Crée un utilisateur.", default_permission=False)
-    async def create_user(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=True), pseudo: Option(str, "pseudo IG.", required=True), dans: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"], required=False, default="Pays")):
+    async def create_user(self, ctx: discord.ApplicationContext,
+                          user: Option(discord.User, "Entre un utilisateur.", required=True),
+                          pseudo: Option(str, "pseudo IG.", required=True),
+                          dans: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"],
+                                       required=False, default="Pays")):
 
         if dans == "Pays":
             data = {
@@ -297,11 +339,13 @@ class Debug(commands.Cog):
                 "date_recrutement": date.today()
             }
             cur = self.bot.countrydb.cursor()
-            cur.execute("INSERT INTO recrutement (id_discord, pseudo_ingame, annee_naissance, experience, date_recrutement) VALUES (:id_discord, :pseudo_ingame, :annee_naissance, :experience, :date_recrutement)",
-                        data)
+            cur.execute(
+                "INSERT INTO recrutement (id_discord, pseudo_ingame, annee_naissance, experience, date_recrutement) VALUES (:id_discord, :pseudo_ingame, :annee_naissance, :experience, :date_recrutement)",
+                data)
             self.bot.countrydb.commit()
             cur.close()
-            await ctx.respond(f"L'utilisateur {user.mention} a bien été enregistrer sous le pseudo ``{pseudo}`` dans la base de donnée de pays")
+            await ctx.respond(
+                f"L'utilisateur {user.mention} a bien été enregistrer sous le pseudo ``{pseudo}`` dans la base de donnée de pays")
         else:
             data = {
                 "id_discord": user.id,
@@ -312,11 +356,15 @@ class Debug(commands.Cog):
                         data)
             self.bot.worlddb.commit()
             cur.close()
-            await ctx.respond(f"L'utilisateur {user.mention} a bien été enregistrer sous le pseudo ``{pseudo}`` dans la base de donnée diplomatique")
+            await ctx.respond(
+                f"L'utilisateur {user.mention} a bien été enregistrer sous le pseudo ``{pseudo}`` dans la base de donnée diplomatique")
 
     # Command /referent
-    @commands.slash_command(name="référent", description="Informe sur son référent et les personnes donc on est référent.", default_permission=False)
-    async def referent(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=True)):
+    @commands.slash_command(name="référent",
+                            description="Informe sur son référent et les personnes donc on est référent.",
+                            default_permission=False)
+    async def referent(self, ctx: discord.ApplicationContext,
+                       user: Option(discord.User, "Entre un utilisateur.", required=True)):
 
         cur = self.bot.countrydb.cursor()
         temp = cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [user.id]).fetchone()
@@ -356,7 +404,8 @@ class Debug(commands.Cog):
             temp4 = cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [temp3[14]]).fetchone()
             referent_tier_four = f"Leader référent :\n<@{temp4[14]}>"
 
-            embed.add_field(name="Référent :", value=f"{referent_tier_on}\n{referent_tier_two}\n{referent_tier_three}\n{referent_tier_four}")
+            embed.add_field(name="Référent :",
+                            value=f"{referent_tier_on}\n{referent_tier_two}\n{referent_tier_three}\n{referent_tier_four}")
 
         temp = cur.execute("SELECT id_discord FROM recrutement WHERE referent=?", [user.id]).fetchall()
         if temp is None:
@@ -371,9 +420,11 @@ class Debug(commands.Cog):
         await ctx.respond(embed=embed)
 
     # Command /fc-recrutement
-    @commands.slash_command(name="fc-recrutement", description="Actualise le statut d'une personne", default_permission=False)
+    @commands.slash_command(name="fc-recrutement", description="Actualise le statut d'une personne",
+                            default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["officier"])
-    async def force_check_recrutement(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=False)):
+    async def force_check_recrutement(self, ctx: discord.ApplicationContext,
+                                      user: Option(discord.User, "Entre un utilisateur.", required=False)):
         guild = self.bot.get_guild(config["guild_id"])
 
         if user is not None:
@@ -405,7 +456,8 @@ class Debug(commands.Cog):
                 'Accept': 'application/json',
                 'Authorization': f'Bearer {config["api_key"]}',
             }
-            response = requests.get(f'https://publicapi.nationsglory.fr/user/{db_data["pseudo_ingame"]}', headers=headers)
+            response = requests.get(f'https://publicapi.nationsglory.fr/user/{db_data["pseudo_ingame"]}',
+                                    headers=headers)
             if response.status_code != 200:
                 await ctx.respond("Erreur de l'API NationsGlory")
                 return
@@ -432,9 +484,11 @@ class Debug(commands.Cog):
             await self.recrutement_check()
 
     # Command /fc-diplomatique
-    @commands.slash_command(name="fc-diplomatique", description="Actualise le statut d'une personne", default_permission=False)
+    @commands.slash_command(name="fc-diplomatique", description="Actualise le statut d'une personne",
+                            default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["officier"])
-    async def force_check_diplomatie(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=False)):
+    async def force_check_diplomatie(self, ctx: discord.ApplicationContext,
+                                     user: Option(discord.User, "Entre un utilisateur.", required=False)):
         guild = self.bot.get_guild(config["guild_id"])
 
         if user is not None:
@@ -455,33 +509,39 @@ class Debug(commands.Cog):
                 'Accept': 'application/json',
                 'Authorization': f'Bearer {config["api_key"]}',
             }
-            response = requests.get(f'https://publicapi.nationsglory.fr/user/{db_data["pseudo_ingame"]}', headers=headers)
+            response = requests.get(f'https://publicapi.nationsglory.fr/user/{db_data["pseudo_ingame"]}',
+                                    headers=headers)
             if response.status_code != 200:
                 await ctx.respond("Erreur de l'API NationsGlory")
                 return
-            if "error" in response.json():
-                if response.json()["error"] == "unknown.user":  # Joueur non détecter
-                    if len(f"Unlink | {db_data['pseudo_ingame']}") <= 32:
-                        await user.edit(nick=f"Unlink | {db_data['pseudo_ingame']}")
-                    elif len(f"{db_data['pseudo_ingame']}") <= 32:
-                        await user.edit(nick=f"{db_data['pseudo_ingame']}")
-                    await user.remove_roles(guild.get_role(config["roles"]["grades"]["link"]))
-                    await ctx.respond("Joueur non reconnu par l'API NationsGlory")
-                else:
-                    await ctx.respond("Erreur de l'API NationsGlory")
-                return
+            if (user.get_role(config["roles"]["grades"]["doyen"]) or user.get_role(
+                    config["roles"]["grades"]["conseiller"])) is None:
+                try:  # Rename suivant situation
+                    if "error" in response.json():
+                        if response.json()["error"] == "unknown.user":  # Joueur non détecter
+                            if len(f"Unlink | {db_data['pseudo_ingame']}") <= 32:
+                                await user.edit(nick=f"Unlink | {db_data['pseudo_ingame']}")
+                            elif len(f"{db_data['pseudo_ingame']}") <= 32:
+                                await user.edit(nick=f"{db_data['pseudo_ingame']}")
+                            await user.remove_roles(guild.get_role(config["roles"]["grades"]["link"]))
+                            await ctx.respond("Joueur non reconnu par l'API NationsGlory")
+                        else:
+                            await ctx.respond("Erreur de l'API NationsGlory")
+                        return
 
-            api_data = {
-                "country": response.json()["servers"]["green"]["country"],
-                "country_rank": response.json()["servers"]["green"]["country_rank"],
-            }
-            if len(f"{api_data['country']} | {db_data['pseudo_ingame']} ({api_data['country_rank']})") <= 32:
-                await user.edit(nick=f"{api_data['country']} | {db_data['pseudo_ingame']} ({api_data['country_rank']})")
-            elif len(f"{api_data['country']} | {db_data['pseudo_ingame']}") <= 32:
-                await user.edit(nick=f"{api_data['country']} | {db_data['pseudo_ingame']}")
-            else:
-                await user.edit(nick=f"{db_data['pseudo_ingame']}")
-            await user.add_roles(guild.get_role(config["roles"]["grades"]["link"]))
+                    api_data = {
+                        "country": response.json()["servers"]["green"]["country"],
+                        "country_rank": response.json()["servers"]["green"]["country_rank"],
+                    }
+                    if len(f"{api_data['country']} | {db_data['pseudo_ingame']} ({api_data['country_rank']})") <= 32:
+                        await user.edit(nick=f"{api_data['country']} | {db_data['pseudo_ingame']} ({api_data['country_rank']})")
+                    elif len(f"{api_data['country']} | {db_data['pseudo_ingame']}") <= 32:
+                        await user.edit(nick=f"{api_data['country']} | {db_data['pseudo_ingame']}")
+                    else:
+                        await user.edit(nick=f"{db_data['pseudo_ingame']}")
+                    await user.add_roles(guild.get_role(config["roles"]["grades"]["link"]))
+                except discord.errors.Forbidden:
+                    pass
             await ctx.respond(f"Check sur {user.mention} effectuer avec succès")
         else:
             await ctx.respond(f"Check diplomatique général lancé !")
@@ -523,11 +583,14 @@ class Debug(commands.Cog):
         cur = self.bot.countrydb.cursor()
         cur.execute("SELECT count(*) FROM recrutement")
         data_number = int(cur.fetchone()[0])
-        with tqdm(total=data_number, unit="member", ascii="⬡⬢", bar_format='{l_bar}{bar:25}{r_bar}{bar:-10b}', desc="Check de la db recrutement ") as line1:
-            await data_bot.send("┌--------------------------------┫ Nouveau check de la db de pays ┠--------------------------------┐")
+        with tqdm(total=data_number, unit="member", ascii="⬡⬢", bar_format='{l_bar}{bar:25}{r_bar}{bar:-10b}',
+                  desc="Check de la db recrutement ") as line1:
+            await data_bot.send(
+                "┌--------------------------------┫ Nouveau check de la db de pays ┠--------------------------------┐")
             message = await data_log.send(line1)
             for i in range(0, data_number, NOMBRE_MEMBRE_PAR_STEP):
-                cur.execute("SELECT * FROM recrutement ORDER BY id_sys LIMIT " + str(NOMBRE_MEMBRE_PAR_STEP) + " OFFSET ?", [i])
+                cur.execute(
+                    "SELECT * FROM recrutement ORDER BY id_sys LIMIT " + str(NOMBRE_MEMBRE_PAR_STEP) + " OFFSET ?", [i])
                 count = 0
                 for temp in cur:
                     await asyncio.sleep(5.1)
@@ -553,18 +616,23 @@ class Debug(commands.Cog):
                         'Accept': 'application/json',
                         'Authorization': f'Bearer {config["api_key"]}',
                     }
-                    response = requests.get(f'https://publicapi.nationsglory.fr/user/{db_data["pseudo_ingame"]}', headers=headers)
+                    response = requests.get(f'https://publicapi.nationsglory.fr/user/{db_data["pseudo_ingame"]}',
+                                            headers=headers)
                     user = guild.get_member(db_data["id_discord"])
 
                     if user is None:
-                        await data_bot.send(f"Le joueur <@{db_data['id_discord']}> ({db_data['pseudo_ingame']}) a quitté le discord.")
+                        await data_bot.send(
+                            f"Le joueur <@{db_data['id_discord']}> ({db_data['pseudo_ingame']}) a quitté le discord.")
                         Leave += 1
                         user = None
-                    elif user.get_role(config["roles"]["grades"]["reglement_valider"]) is None and (db_data['grade'] != 0):
-                        await data_bot.send(f"Le joueur <@{db_data['id_discord']}> ({db_data['pseudo_ingame']}) a quitté le discord et est revenu.")
+                    elif user.get_role(config["roles"]["grades"]["reglement_valider"]) is None and (
+                            db_data['grade'] != 0):
+                        await data_bot.send(
+                            f"Le joueur <@{db_data['id_discord']}> ({db_data['pseudo_ingame']}) a quitté le discord et est revenu.")
                         Leave += 1
                     if response.status_code != 200:
-                        await data_bot.send(f"Le joueur <@{db_data['id_discord']}> ({db_data['pseudo_ingame']}) provoque un crash de l'API NationsGlory.")
+                        await data_bot.send(
+                            f"Le joueur <@{db_data['id_discord']}> ({db_data['pseudo_ingame']}) provoque un crash de l'API NationsGlory.")
                         API_error += 1
                         api_data = None
                     elif "error" in response.json():
@@ -573,7 +641,8 @@ class Debug(commands.Cog):
                             if user is not None:
                                 await user.remove_roles(guild.get_role(config["roles"]["grades"]["link"]))
                         else:
-                            await data_bot.send(f"Le joueur <@{db_data['id_discord']}> ({db_data['pseudo_ingame']}) provoque un crash de l'API NationsGlory.")
+                            await data_bot.send(
+                                f"Le joueur <@{db_data['id_discord']}> ({db_data['pseudo_ingame']}) provoque un crash de l'API NationsGlory.")
                         api_data = None
                     else:
                         api_data = {
@@ -584,7 +653,8 @@ class Debug(commands.Cog):
                 line1.update(count)
                 await message.edit(content=line1)
         cur.close()
-        await data_log.send(f"Check de la db recrutement terminé ! Sur un total de ``{data_number}`` personnes, ``{Unrecognized}`` n'ont pas été reconnue (``{(Unrecognized/data_number)*100}%``). ``{Leave}`` personnes ont quitté le discord (comprend aussi ceux revenus). Le bot a rencontré ``{API_error}`` erreurs d'API.")
+        await data_log.send(
+            f"Check de la db recrutement terminé ! Sur un total de ``{data_number}`` personnes, ``{Unrecognized}`` n'ont pas été reconnue (``{(Unrecognized / data_number) * 100}%``). ``{Leave}`` personnes ont quitté le discord (comprend aussi ceux revenus). Le bot a rencontré ``{API_error}`` erreurs d'API.")
 
     async def recrutement_check_user(self, db_data, api_data, user):
 
@@ -597,12 +667,14 @@ class Debug(commands.Cog):
 
         # vérifie si le joueur existe bien IG
         if api_data is None:
-            await data_bot.send(f"L'utilisateur enregistrer sous le nom de {db_data['pseudo_ingame']} ({user.mention}) n'existe pas IG (ID: {db_data['id_sys']})")
+            await data_bot.send(
+                f"L'utilisateur enregistrer sous le nom de {db_data['pseudo_ingame']} ({user.mention}) n'existe pas IG (ID: {db_data['id_sys']})")
             return
 
         # Actualisation pays
         if db_data["country"] != api_data["country"]:
-            cur.execute("UPDATE recrutement SET pays=? WHERE id_discord=?", [api_data["country"], db_data["id_discord"]])
+            cur.execute("UPDATE recrutement SET pays=? WHERE id_discord=?",
+                        [api_data["country"], db_data["id_discord"]])
             await user.remove_roles(guild.get_role(config["roles"]["pays"]["guyana"]))
             await user.remove_roles(guild.get_role(config["roles"]["pays"]["suriname"]))
             await user.remove_roles(guild.get_role(config["roles"]["pays"]["triniteettobago"]))
@@ -616,15 +688,16 @@ class Debug(commands.Cog):
             elif api_data["country"] == "Venezuela":
                 await user.add_roles(guild.get_role(config["roles"]["pays"]["venezuela"]))
 
-
         # Inactivité
         if api_data is not None:
             jours_deco = (date.today() - datetime.datetime.fromisoformat(api_data["last_connection"]).date()).days
-            cur.execute("UPDATE recrutement SET last_connection=? WHERE id_discord=?", [jours_deco, db_data["id_discord"]])
+            cur.execute("UPDATE recrutement SET last_connection=? WHERE id_discord=?",
+                        [jours_deco, db_data["id_discord"]])
 
             if jours_deco >= 10 and db_data["absence_fin"] is None:
                 try:
-                    await data_bot.send(f"L'utilisateur {db_data['pseudo_ingame']} ({user.mention}) est absent depuis {jours_deco} jours.")
+                    await data_bot.send(
+                        f"L'utilisateur {db_data['pseudo_ingame']} ({user.mention}) est absent depuis {jours_deco} jours.")
                 except Forbidden:
                     pass
 
@@ -654,21 +727,24 @@ class Debug(commands.Cog):
                 pass
 
         # Ancienneté
-        if date.today() - date.fromisoformat(db_data["date_recrutement"]) >= timedelta(days=7) and db_data["anciennete"] == 0:
+        if date.today() - date.fromisoformat(db_data["date_recrutement"]) >= timedelta(days=7) and db_data[
+            "anciennete"] == 0:
             cur.execute("UPDATE recrutement SET anciennete=1 WHERE id_discord=?", [db_data["id_discord"]])
             # try:
             #     await user.send(
             #         f"Félicitation, cela fait maintenant 1 semaine que tu es dans le pays ! tu as automatiquement validé la condition \"ancienneté\" dans les conditions de ranks (plus d'info avec le /player-info)")
             # except Forbidden:
             #     pass
-        if date.today() - date.fromisoformat(db_data["date_recrutement"]) >= timedelta(days=31) and db_data["anciennete"] <= 1:
+        if date.today() - date.fromisoformat(db_data["date_recrutement"]) >= timedelta(days=31) and db_data[
+            "anciennete"] <= 1:
             cur.execute("UPDATE recrutement SET anciennete=2 WHERE id_discord=?", [db_data["id_discord"]])
             # try:
             #     await member_guild.send(
             #         f"Félicitation, cela fait maintenant 1 mois que tu es dans le pays ! tu as automatiquement validé la condition \"ancienneté\" dans les conditions de ranks (plus d'info avec le /player-info)")
             # except Forbidden:
             #     pass
-        if date.today() - date.fromisoformat(db_data["date_recrutement"]) >= timedelta(days=90) and db_data["anciennete"] <= 2:
+        if date.today() - date.fromisoformat(db_data["date_recrutement"]) >= timedelta(days=90) and db_data[
+            "anciennete"] <= 2:
             cur.execute("UPDATE recrutement SET anciennete=3 WHERE id_discord=?", [db_data["id_discord"]])
             # try:
             #     await member_guild.send(
@@ -678,7 +754,8 @@ class Debug(commands.Cog):
 
         # Bon pays
         if (not api_data["country"] in config["list_pays"]) and (db_data["peut_quitter_pays"] is None):
-            await data_bot.send(f"L'utilisateur {db_data['pseudo_ingame']} ({user.mention}) n'est plus dans l'un des pays GDE et ne dispose d'aucune autorisation a cette effet.")
+            await data_bot.send(
+                f"L'utilisateur {db_data['pseudo_ingame']} ({user.mention}) n'est plus dans l'un des pays GDE et ne dispose d'aucune autorisation a cette effet.")
 
         # 2 semaines nouvelle recrue
         # anciennete = date.today() - date.fromisoformat(bdd_data["date_recrutement"])
@@ -699,10 +776,13 @@ class Debug(commands.Cog):
         cur = self.bot.worlddb.cursor()
         cur.execute("SELECT count(*) FROM diplomatie")
         data_number = int(cur.fetchone()[0])
-        with tqdm(total=data_number, unit="member", ascii="⬡⬢", bar_format='{l_bar}{bar:25}{r_bar}{bar:-10b}', desc="Check de la db diplomatique ") as line1:
+        with tqdm(total=data_number, unit="member", ascii="⬡⬢", bar_format='{l_bar}{bar:25}{r_bar}{bar:-10b}',
+                  desc="Check de la db diplomatique ") as line1:
             message = await data_log.send(line1)
             for i in range(0, data_number, NOMBRE_MEMBRE_PAR_STEP):
-                cur.execute("SELECT * FROM diplomatie ORDER BY id_sys LIMIT " + str(NOMBRE_MEMBRE_PAR_STEP) + " OFFSET ?", [i - Delete])
+                cur.execute(
+                    "SELECT * FROM diplomatie ORDER BY id_sys LIMIT " + str(NOMBRE_MEMBRE_PAR_STEP) + " OFFSET ?",
+                    [i - Delete])
                 count = 0
                 for temp in cur:
                     await asyncio.sleep(5.1)
@@ -717,7 +797,8 @@ class Debug(commands.Cog):
                         'Accept': 'application/json',
                         'Authorization': f'Bearer {config["api_key"]}',
                     }
-                    response = requests.get(f'https://publicapi.nationsglory.fr/user/{db_data["pseudo_ingame"]}', headers=headers)
+                    response = requests.get(f'https://publicapi.nationsglory.fr/user/{db_data["pseudo_ingame"]}',
+                                            headers=headers)
                     user = guild.get_member(db_data["id_discord"])
 
                     if user is None:
@@ -727,32 +808,39 @@ class Debug(commands.Cog):
                     else:
                         if response.status_code != 200:
                             API_error += 1
-                        if "error" in response.json():
-                            if response.json()["error"] == "unknown.user":  # Joueur non détecter
-                                if len(f"Unlink | {db_data['pseudo_ingame']}") <= 32:
-                                    await user.edit(nick=f"Unlink | {db_data['pseudo_ingame']}")
-                                elif len(f"{db_data['pseudo_ingame']}") <= 32:
-                                    await user.edit(nick=f"{db_data['pseudo_ingame']}")
-                                await user.remove_roles(guild.get_role(config["roles"]["grades"]["link"]))
-                                Unrecognized += 0
-                            else:
-                                API_error += 1
-                        else:
-                            api_data = {
-                                "country": response.json()["servers"]["green"]["country"],
-                                "country_rank": response.json()["servers"]["green"]["country_rank"],
-                            }
-                            if len(f"{api_data['country']} | {db_data['pseudo_ingame']} ({api_data['country_rank']})") <= 32:
-                                await user.edit(nick=f"{api_data['country']} | {db_data['pseudo_ingame']} ({api_data['country_rank']})")
-                            elif len(f"{api_data['country']} | {db_data['pseudo_ingame']}") <= 32:
-                                await user.edit(nick=f"{api_data['country']} | {db_data['pseudo_ingame']}")
-                            else:
-                                await user.edit(nick=f"{db_data['pseudo_ingame']}")
+                        if (user.get_role(config["roles"]["grades"]["doyen"]) or user.get_role(config["roles"]["grades"]["conseiller"])) is None:
+                            try:  # Rename suivant situation
+                                if "error" in response.json():
+                                    if response.json()["error"] == "unknown.user":  # Joueur non détecter
+                                        if len(f"Unlink | {db_data['pseudo_ingame']}") <= 32:
+                                            await user.edit(nick=f"Unlink | {db_data['pseudo_ingame']}")
+                                        elif len(f"{db_data['pseudo_ingame']}") <= 32:
+                                            await user.edit(nick=f"{db_data['pseudo_ingame']}")
+                                        await user.remove_roles(guild.get_role(config["roles"]["grades"]["link"]))
+                                        Unrecognized += 0
+                                    else:
+                                        API_error += 1
+                                else:
+                                    api_data = {
+                                        "country": response.json()["servers"]["green"]["country"],
+                                        "country_rank": response.json()["servers"]["green"]["country_rank"],
+                                    }
+                                    await user.add_roles(guild.get_role(config["roles"]["grades"]["link"]))
+                                    if len(f"{api_data['country']} | {db_data['pseudo_ingame']} ({api_data['country_rank']})") <= 32:
+                                        await user.edit(
+                                            nick=f"{api_data['country']} | {db_data['pseudo_ingame']} ({api_data['country_rank']})")
+                                    elif len(f"{api_data['country']} | {db_data['pseudo_ingame']}") <= 32:
+                                        await user.edit(nick=f"{api_data['country']} | {db_data['pseudo_ingame']}")
+                                    else:
+                                        await user.edit(nick=f"{db_data['pseudo_ingame']}")
+                            except discord.errors.Forbidden:
+                                pass
                 line1.update(count)
                 await message.edit(content=line1)
 
         cur.close()
-        await data_log.send(f"Check de la db diplomatique terminé ! Sur un total de ``{data_number}`` personnes, ``{Unrecognized}`` n'ont pas été reconnue (``{(Unrecognized/data_number)*100}%``). ``{Delete}`` personnes ont quitter le discord et ont donc été supprimer de la db diplomatique. Le bot a rencontré ``{API_error}`` erreurs d'API.")
+        await data_log.send(
+            f"Check de la db diplomatique terminé ! Sur un total de ``{data_number}`` personnes, ``{Unrecognized}`` n'ont pas été reconnue (``{(Unrecognized / data_number) * 100}%``). ``{Delete}`` personnes ont quitter le discord et ont donc été supprimer de la db diplomatique. Le bot a rencontré ``{API_error}`` erreurs d'API.")
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -800,7 +888,8 @@ class PingCommandView(View):
             await interaction.user.remove_roles(guild.get_role(config["roles"]["pings"]["media"]))
         await interaction.response.edit_message(view=self)
 
-    @discord.ui.button(label="Secondaire", style=discord.ButtonStyle.secondary, emoji="🧶", custom_id="button-secondaire")
+    @discord.ui.button(label="Secondaire", style=discord.ButtonStyle.secondary, emoji="🧶",
+                       custom_id="button-secondaire")
     async def secondaire_button_callback(self, button, interaction):
         guild = self.bot.get_guild(config["guild_id"])
 
