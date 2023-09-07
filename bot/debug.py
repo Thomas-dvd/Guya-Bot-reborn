@@ -95,35 +95,15 @@ class Debug(commands.Cog):
     @commands.slash_command(description="Donne toute les informations d'une personne", default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["officier"])
     async def edit(self, ctx: discord.ApplicationContext,
-                   user: Option(discord.User, "Entre un utilisateur.", required=True), donnees: Option(str,
-                                                                                                       "Paramètre a modifier (Ceux marquer d'une * sont disponible pour les diplomaties.",
-                                                                                                       choices=[
-                                                                                                           "* ID Système",
-                                                                                                           "*ID Discord",
-                                                                                                           "*Pseudo IG",
-                                                                                                           "Age",
-                                                                                                           "Experience",
-                                                                                                           "Grade",
-                                                                                                           "Pays",
-                                                                                                           "Peut quitter le pays",
-                                                                                                           "Date recrutement",
-                                                                                                           "Ancienneté",
-                                                                                                           "Schématique",
-                                                                                                           "Régiment",
-                                                                                                           "Dernière connexion",
-                                                                                                           "Fin d'absence",
-                                                                                                           "Référent"]),
-                   valeur: Option(str, "Nouvelle valeur (None pour Null).", required=True),
-                   de: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"], required=False,
-                              default="Pays")):
+                   user: Option(discord.User, "Entre un utilisateur.", required=True), donnees: Option(str,"Paramètre a modifier (Ceux marquer d'une * sont disponible pour les diplomaties.", choices=["* ID Système","*ID Discord","*Pseudo IG","Age","Experience","Grade","Pays","Peut quitter le pays","Date recrutement","Ancienneté","Schématique","Régiment","Dernière connexion","Fin d'absence","Référent"]),valeur: Option(str, "Nouvelle valeur (None pour Null).", required=True),de: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"], required=False,default="Pays")):
 
-        if donnees in [
-            "*ID Système" or "ID Discord" or "Age" or "Grade" or "Peut quitter pays" or "Ancienneté" or "Dernière connexion"]:
+        if donnees in ["*ID Système", "ID Discord", "Age", "Grade", "Peut quitter pays", "Ancienneté", "Dernière connexion"]:
             valeur = int(valeur)
         if valeur in ["None", "none"]:
             valeur = None
         if donnees == "Age":
-            valeur = (date.today().year - valeur) if valeur != "-1" else -1
+            valeur2 = (date.today().year - valeur) if valeur != "-1" else -1
+
 
         if de == "Pays":
             cur = self.bot.countrydb.cursor()
@@ -176,7 +156,7 @@ class Debug(commands.Cog):
                         return
 
             if donnees == "Age":
-                cur.execute(f"UPDATE recrutement SET annee_naissance=? WHERE id_discord=?", [valeur, user.id])
+                cur.execute(f"UPDATE recrutement SET annee_naissance=? WHERE id_discord=?", [valeur2, user.id])
             if donnees == "Experience":
                 cur.execute(f"UPDATE recrutement SET experience=? WHERE id_discord=?", [valeur, user.id])
             if donnees == "Grade":
