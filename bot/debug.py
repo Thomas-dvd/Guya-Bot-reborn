@@ -38,7 +38,7 @@ class Debug(commands.Cog):
             await asyncio.sleep(12 * 60 * 60)
 
     # Command /informations
-    @commands.slash_command(description="Donne toute les informations d'une personne", default_permission=False)
+    @commands.slash_command(description="Donne toute les informations d'une personne.", default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["officier"])
     async def informations(self, ctx: discord.ApplicationContext,user: Option(discord.User, "Entre un utilisateur.", required=True),de: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"],required=False, default="Pays")):
 
@@ -89,15 +89,15 @@ class Debug(commands.Cog):
             await ctx.respond(embed=embed)
 
     # Command /edit
-    @commands.slash_command(description="Donne toute les informations d'une personne", default_permission=False)
+    @commands.slash_command(name="édit", description="Donne toute les informations d'une personne.", default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["officier"])
-    async def edit(self, ctx: discord.ApplicationContext,user: Option(discord.User, "Entre un utilisateur.", required=True), donnees: Option(str,"Paramètre a modifier (Ceux marquer d'une * sont disponible pour les diplomaties.", choices=["* ID Système","*ID Discord","*Pseudo IG","Age","Experience","Grade","Pays","Peut quitter le pays","Date recrutement","Ancienneté","Schématique","Régiment","Dernière connexion","Fin d'absence","Référent"]),valeur: Option(str, "Nouvelle valeur (None pour Null).", required=True),de: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"], required=False,default="Pays")):
+    async def edit(self, ctx: discord.ApplicationContext,user: Option(discord.User, "Entre un utilisateur.", required=True), donnée: Option(str,"Paramètre a modifier (Ceux marquer d'une * sont disponible pour les diplomaties.", choices=["* ID Système","*ID Discord","*Pseudo IG","Age","Experience","Grade","Pays","Peut quitter le pays","Date recrutement","Ancienneté","Schématique","Régiment","Dernière connexion","Fin d'absence","Référent"]),valeur: Option(str, "Nouvelle valeur (None pour Null).", required=True),de: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"], required=False,default="Pays")):
 
-        if donnees in ["*ID Système", "ID Discord", "Age", "Grade", "Peut quitter pays", "Ancienneté", "Dernière connexion"]:
+        if donnée in ["*ID Système", "ID Discord", "Age", "Grade", "Peut quitter pays", "Ancienneté", "Dernière connexion"]:
             valeur = int(valeur)
         if valeur in ["None", "none"]:
             valeur = None
-        if donnees == "Age":
+        if donnée == "Age":
             valeur2 = (date.today().year - valeur) if valeur != "-1" else -1
 
 
@@ -108,11 +108,11 @@ class Debug(commands.Cog):
             if temp is None:
                 await ctx.respond("Utilisateur absent de la base de donnée de pays")
                 return
-            if donnees == "*ID Système":
+            if donnée == "*ID Système":
                 cur.execute(f"UPDATE recrutement SET id_sys=? WHERE id_discord=?", [valeur, user.id])
-            if donnees == "*ID Discord":
+            if donnée == "*ID Discord":
                 cur.execute(f"UPDATE recrutement SET id_discord=? WHERE id_discord=?", [valeur, user.id])
-            if donnees == "*Pseudo IG":
+            if donnée == "*Pseudo IG":
                 cur.execute(f"UPDATE recrutement SET pseudo_ingame=? WHERE id_discord=?", [valeur, user.id])
                 headers = {
                     'Accept': 'application/json',
@@ -132,7 +132,7 @@ class Debug(commands.Cog):
                         self.bot.worlddb.commit()
                         cur.close()
                         await ctx.respond(
-                            f"La donnée {donnees} du joueur {user.mention} a bien été définit sur ``{valeur}``. **Impossible cependant pour le bot de le rename.**")
+                            f"La donnée {donnée} du joueur {user.mention} a bien été définit sur ``{valeur}``. **Impossible cependant pour le bot de le rename.**")
                         return
                 else:
                     user_grade = \
@@ -148,32 +148,32 @@ class Debug(commands.Cog):
                         self.bot.worlddb.commit()
                         cur.close()
                         await ctx.respond(
-                            f"La donnée {donnees} du joueur {user.mention} a bien été définit sur ``{valeur}``. **Impossible cependant pour le bot de le rename.**")
+                            f"La donnée {donnée} du joueur {user.mention} a bien été définit sur ``{valeur}``. **Impossible cependant pour le bot de le rename.**")
                         return
 
-            if donnees == "Age":
+            if donnée == "Age":
                 cur.execute(f"UPDATE recrutement SET annee_naissance=? WHERE id_discord=?", [valeur2, user.id])
-            if donnees == "Experience":
+            if donnée == "Experience":
                 cur.execute(f"UPDATE recrutement SET experience=? WHERE id_discord=?", [valeur, user.id])
-            if donnees == "Grade":
+            if donnée == "Grade":
                 cur.execute(f"UPDATE recrutement SET grade=? WHERE id_discord=?", [valeur, user.id])
-            if donnees == "Pays":
+            if donnée == "Pays":
                 cur.execute(f"UPDATE recrutement SET pays=? WHERE id_discord=?", [valeur, user.id])
-            if donnees == "Peut quitter pays":
+            if donnée == "Peut quitter pays":
                 cur.execute(f"UPDATE recrutement SET peut_quitter_pays=? WHERE id_discord=?", [valeur, user.id])
-            if donnees == "Date recrutement":
+            if donnée == "Date recrutement":
                 cur.execute(f"UPDATE recrutement SET date_recrutement=? WHERE id_discord=?", [valeur, user.id])
-            if donnees == "Ancienneté":
+            if donnée == "Ancienneté":
                 cur.execute(f"UPDATE recrutement SET anciennete=? WHERE id_discord=?", [valeur, user.id])
-            if donnees == "Schématique":
+            if donnée == "Schématique":
                 cur.execute(f"UPDATE recrutement SET schematique=? WHERE id_discord=?", [valeur, user.id])
-            if donnees == "Régiment":
+            if donnée == "Régiment":
                 cur.execute(f"UPDATE recrutement SET regiment=? WHERE id_discord=?", [valeur, user.id])
-            if donnees == "Dernière connexion":
+            if donnée == "Dernière connexion":
                 cur.execute(f"UPDATE recrutement SET last_connexion=? WHERE id_discord=?", [valeur, user.id])
-            if donnees == "Fin d'absence":
+            if donnée == "Fin d'absence":
                 cur.execute(f"UPDATE recrutement SET absence_fin=? WHERE id_discord=?", [valeur, user.id])
-            if donnees == "Référent":
+            if donnée == "Référent":
                 cur.execute(f"UPDATE recrutement SET referent=? WHERE id_discord=?", [valeur, user.id])
             self.bot.countrydb.commit()
             cur.close()
@@ -185,11 +185,11 @@ class Debug(commands.Cog):
             if temp is None:
                 await ctx.respond("Utilisateur absent de la base de donnée diplomatique")
                 return
-            if donnees == "*ID Système":
+            if donnée == "*ID Système":
                 cur.execute(f"UPDATE diplomatie SET id_sys=? WHERE id_discord=?", [valeur, user.id])
-            if donnees == "*ID Discord":
+            if donnée == "*ID Discord":
                 cur.execute(f"UPDATE diplomatie SET id_discord=? WHERE id_discord=?", [valeur, user.id])
-            if donnees == "*Pseudo IG":
+            if donnée == "*Pseudo IG":
                 cur.execute(f"UPDATE diplomatie SET pseudo_ingame=? WHERE id_discord=?", [valeur, user.id])
                 headers = {
                     'Accept': 'application/json',
@@ -213,7 +213,7 @@ class Debug(commands.Cog):
                             self.bot.worlddb.commit()
                             cur.close()
                             await ctx.respond(
-                                f"La donnée {donnees} du joueur {user.mention} a bien été définit sur ``{valeur}``. **Impossible cependant pour le bot de le rename.**")
+                                f"La donnée {donnée} du joueur {user.mention} a bien été définit sur ``{valeur}``. **Impossible cependant pour le bot de le rename.**")
                             return
                     else:
                         await ctx.respond(
@@ -238,15 +238,16 @@ class Debug(commands.Cog):
                         self.bot.worlddb.commit()
                         cur.close()
                         await ctx.respond(
-                            f"La donnée {donnees} du joueur {user.mention} a bien été définit sur ``{valeur}``. **Impossible cependant pour le bot de le rename.**")
+                            f"La donnée {donnée} du joueur {user.mention} a bien été définit sur ``{valeur}``. **Impossible cependant pour le bot de le rename.**")
                         return
             self.bot.worlddb.commit()
             cur.close()
 
-        await ctx.respond(f"La donnée {donnees} du joueur {user.mention} a bien été définit sur ``{valeur}``.")
+        await ctx.respond(f"La donnée {donnée} du joueur {user.mention} a bien été définit sur ``{valeur}``.")
 
     # Command /transfert
     @commands.slash_command(description="Transfert un joueur de base de donnée.", default_permission=False)
+    @commands.has_any_role(config["roles"]["grades"]["officier"])
     async def transfert(self, ctx: discord.ApplicationContext,user: Option(discord.User, "Entre un utilisateur.", required=True)):
 
         cur = self.bot.countrydb.cursor()
@@ -298,37 +299,37 @@ class Debug(commands.Cog):
                 f"L'utilisateur {user.mention} a bien été transférer de la base de donnée de pays a celle de diplomatie.")
 
     # Command /create_user
-    @commands.slash_command(name="create-user", description="Crée un utilisateur.", default_permission=False)
-    async def create_user(self, ctx: discord.ApplicationContext,user: Option(discord.User, "Entre un utilisateur.", required=True),pseudo: Option(str, "pseudo IG.", required=True),dans: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"],required=False, default="Pays")):
-
-        if dans == "Pays":
-            data = {
-                "id_discord": user.id,
-                "pseudo_ingame": pseudo,
-                "experience": "create user",
-                "annee_naissance": "-1",
-                "date_recrutement": date.today()
-            }
-            cur = self.bot.countrydb.cursor()
-            cur.execute(
-                "INSERT INTO recrutement (id_discord, pseudo_ingame, annee_naissance, experience, date_recrutement) VALUES (:id_discord, :pseudo_ingame, :annee_naissance, :experience, :date_recrutement)",
-                data)
-            self.bot.countrydb.commit()
-            cur.close()
-            await ctx.respond(
-                f"L'utilisateur {user.mention} a bien été enregistrer sous le pseudo ``{pseudo}`` dans la base de donnée de pays")
-        else:
-            data = {
-                "id_discord": user.id,
-                "pseudo_ingame": pseudo,
-            }
-            cur = self.bot.worlddb.cursor()
-            cur.execute("INSERT INTO diplomatie (id_discord, pseudo_ingame) VALUES (:id_discord, :pseudo_ingame)",
-                        data)
-            self.bot.worlddb.commit()
-            cur.close()
-            await ctx.respond(
-                f"L'utilisateur {user.mention} a bien été enregistrer sous le pseudo ``{pseudo}`` dans la base de donnée diplomatique")
+    # @commands.slash_command(name="create-user", description="Crée un utilisateur.", default_permission=False)
+    # async def create_user(self, ctx: discord.ApplicationContext,user: Option(discord.User, "Entre un utilisateur.", required=True),pseudo: Option(str, "pseudo IG.", required=True),dans: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"],required=False, default="Pays")):
+    #
+    #     if dans == "Pays":
+    #         data = {
+    #             "id_discord": user.id,
+    #             "pseudo_ingame": pseudo,
+    #             "experience": "create user",
+    #             "annee_naissance": "-1",
+    #             "date_recrutement": date.today()
+    #         }
+    #         cur = self.bot.countrydb.cursor()
+    #         cur.execute(
+    #             "INSERT INTO recrutement (id_discord, pseudo_ingame, annee_naissance, experience, date_recrutement) VALUES (:id_discord, :pseudo_ingame, :annee_naissance, :experience, :date_recrutement)",
+    #             data)
+    #         self.bot.countrydb.commit()
+    #         cur.close()
+    #         await ctx.respond(
+    #             f"L'utilisateur {user.mention} a bien été enregistrer sous le pseudo ``{pseudo}`` dans la base de donnée de pays")
+    #     else:
+    #         data = {
+    #             "id_discord": user.id,
+    #             "pseudo_ingame": pseudo,
+    #         }
+    #         cur = self.bot.worlddb.cursor()
+    #         cur.execute("INSERT INTO diplomatie (id_discord, pseudo_ingame) VALUES (:id_discord, :pseudo_ingame)",
+    #                     data)
+    #         self.bot.worlddb.commit()
+    #         cur.close()
+    #         await ctx.respond(
+    #             f"L'utilisateur {user.mention} a bien été enregistrer sous le pseudo ``{pseudo}`` dans la base de donnée diplomatique")
 
     # Command /referent
     @commands.slash_command(name="référent",description="Informe sur son référent et les personnes donc on est référent.",default_permission=False)
@@ -389,7 +390,7 @@ class Debug(commands.Cog):
         await ctx.respond(embed=embed)
 
     # Command /fc-recrutement
-    @commands.slash_command(name="fc-recrutement", description="Actualise le statut d'une personne",
+    @commands.slash_command(name="fc-recrutement", description="Actualise le statut d'une personne.",
                             default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["officier"])
     async def force_check_recrutement(self, ctx: discord.ApplicationContext,
@@ -454,7 +455,7 @@ class Debug(commands.Cog):
             await self.recrutement_check()
 
     # Command /fc-diplomatique
-    @commands.slash_command(name="fc-diplomatique", description="Actualise le statut d'une personne",
+    @commands.slash_command(name="fc-diplomatique", description="Actualise le statut d'une personne.",
                             default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["officier"])
     async def force_check_diplomatie(self, ctx: discord.ApplicationContext,
@@ -518,7 +519,7 @@ class Debug(commands.Cog):
             await self.diplomatique_check()
 
     # Command /goldpass-list
-    @commands.slash_command(description="Donne la liste des goldpass", default_permission=False, name="goldpass-list")
+    @commands.slash_command(description="Donne la liste des absences longues durées.", default_permission=False, name="goldpass-list")
     @commands.has_any_role(config["roles"]["grades"]["gouverneur"])
     async def goldpass_list(self, ctx):
         special_date = "2050-01-01"
@@ -530,10 +531,10 @@ class Debug(commands.Cog):
         cur.close()
 
     # Command /pings
-    @commands.slash_command(description="Pour modifier ses pings", name="pings")
+    @commands.slash_command(description="Pour modifier ses pings.", name="pings")
     async def pings(self, ctx):
         embed = utils.create_embed(self.bot, title="**Pings :**",
-                                   description=f"Tu peux choisir des pings personnalisés :\n\n<@&{config['roles']['pings']['notations']}> : Pour être mentionné pour les notations du pays (une fois par semaine).\n\n<@&{config['roles']['pings']['discord']}> : Pour être mentionné pour les mises a jours du discord, les nouveautés.\n\n<@&{config['roles']['pings']['media']}> : Pour être mentionné pour les vidéos et lives des membres du pays.\n\n<@&{config['roles']['pings']['secondaire']}> : Pour être mentionné pour les informations secondaires, les événements auxquelles ont participe hors de NationsGlory.\n\nCes paramètres peuvent être modifiés avec la commande ``/ping``",
+                                   description=f"Tu peux choisir des pings personnalisés :\n\n<@&{config['roles']['pings']['notations']}> : Pour être mentionné pour les notations du pays (une fois par semaine).\n\n<@&{config['roles']['pings']['discord']}> : Pour être mentionné pour les mises a jours du discord, les nouveautés.\n\n<@&{config['roles']['pings']['media']}> : Pour être mentionné pour les vidéos et lives des membres du pays.\n\n<@&{config['roles']['pings']['secondaire']}> : Pour être mentionné pour les informations secondaires, les événements auxquelles ont participe hors de NationsGlory.\n\nCes paramètres peuvent être modifiés avec la commande ``/pings``",
                                    color=Color.gold())
 
         await ctx.channel.send(embed=embed, view=PingCommandView(self.bot))

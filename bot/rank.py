@@ -1004,7 +1004,7 @@ class Rank(commands.Cog):
     # ------------------------------------------------------------------------------------------
     #                                   Command /absence
     # ------------------------------------------------------------------------------------------
-    @commands.slash_command(description="Pour noté l'absence de quelqu'un")
+    @commands.slash_command(description="Pour noter l'absence de quelqu'un.")
     @commands.has_any_role(config["roles"]["grades"]["officier"])
     async def absence(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur."), fin: Option(str, "Entre une date de fin", required=True)):
 
@@ -1347,7 +1347,7 @@ class Rank(commands.Cog):
     async def on_ready(self):
         await self.start_check_loop()
 
-    @commands.slash_command(description="Lance immédiatement le check des rank-up en cours", default_permission=False, name="fc-rank")
+    @commands.slash_command(description="Lance immédiatement le check des rank-up en cours.", default_permission=False, name="fc-rank")
     @commands.has_any_role(config["roles"]["grades"]["officier"])
     async def force_check_rank(self, ctx: discord.ApplicationContext):
         await ctx.respond("Check des ranks lancé.")
