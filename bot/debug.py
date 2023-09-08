@@ -37,6 +37,13 @@ class Debug(commands.Cog):
             await asyncio.create_task(self.diplomatique_check())
             await asyncio.sleep(12 * 60 * 60)
 
+    # ------------------------------------------------------------------------------------------
+    #                                         Commands
+    # ------------------------------------------------------------------------------------------
+
+    # groupe create
+    forcecheck = discord.SlashCommandGroup("forcecheck", "forcecheck related commands")
+
     # Command /informations
     @commands.slash_command(description="Donne toute les informations d'une personne.", default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["officier"])
@@ -390,7 +397,7 @@ class Debug(commands.Cog):
         await ctx.respond(embed=embed)
 
     # Command /fc-recrutement
-    @commands.slash_command(name="fc-recrutement", description="Actualise le statut d'une personne.",
+    @forcecheck.command(name="recrutement", description="Actualise le statut d'une personne.",
                             default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["officier"])
     async def force_check_recrutement(self, ctx: discord.ApplicationContext,
@@ -455,7 +462,7 @@ class Debug(commands.Cog):
             await self.recrutement_check()
 
     # Command /fc-diplomatique
-    @commands.slash_command(name="fc-diplomatique", description="Actualise le statut d'une personne.",
+    @forcecheck.command(name="diplomatique", description="Actualise le statut d'une personne.",
                             default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["officier"])
     async def force_check_diplomatie(self, ctx: discord.ApplicationContext,

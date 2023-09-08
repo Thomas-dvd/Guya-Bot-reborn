@@ -41,8 +41,11 @@ class Recrutement(commands.Cog):
     #                                         Commands
     # ------------------------------------------------------------------------------------------
 
+    #groupe create
+    create = discord.SlashCommandGroup("create", "create related commands")
+
     # Command /create-recrue
-    @commands.slash_command(name="create-recrue", description="Enregistrer une nouvelle recrue.", default_permission=False)
+    @create.command(name="recrue", description="Enregistrer une nouvelle recrue.", default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["recruteur"])
     async def create_recrue(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=True), pseudo: Option(str, "pseudo IG.", required=True), age: Option(int, "Age.", required=False)):
 
@@ -107,7 +110,7 @@ class Recrutement(commands.Cog):
         await channel_general.send(f"La personne qui ce chargera de le guider au sain du pays est {ctx.user.mention}")
 
     # Command /create-diplomate
-    @commands.slash_command(name="create-diplomate", description="Enregistrer un nouveau diplomate.", default_permission=False)
+    @create.command(name="diplomate", description="Enregistrer un nouveau diplomate.", default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["recruteur"])
     async def create_diplomate(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=True), pseudo: Option(str, "pseudo IG.", required=True), relation: Option(str, "Niveau de relation.", choices=["Neutre", "Allié", "Ami"],required=False, default="Neutre"), médaille: Option(str, "Grades médailles.", choices=["Guide", "Modo", "OP (SuperModo/Admin)"],required=False)):
 
@@ -215,6 +218,39 @@ class Recrutement(commands.Cog):
             await ctx.respond(f"{user.mention} a bien été enregistré.")
         else:
             await ctx.respond(f"{user.mention} a bien été enregistré. **Pseudo non reconnu par NationsGlory.**")
+
+    @create.command(name="non-joueur", description="Enregistrer une personne ne jouant pas a NationsGlory.", default_permission=False)
+    @commands.has_any_role(config["roles"]["grades"]["recruteur"])
+    async def create_non_joueur(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=True), relation: Option(str, "Niveau de relation.", choices=["Neutre", "Allié", "Ami"], required=False, default="Neutre")):
+
+        await ctx.defer()
+        text = ""
+
+        # Rename user + add role
+        for role in config["roles"]["deco"]["global"]:
+            await user.add_roles(ctx.guild.get_role(role))
+            text += f", <@&{role}>"
+
+        if relation == "Neutre":
+            await user.add_roles(ctx.guild.get_role(config["roles"]["grades"]["neutre"]))
+            text += f" <@&{config['roles']['grades']['neutre']}>"
+        elif relation == "Allié":
+            await user.add_roles(ctx.guild.get_role(config["roles"]["grades"]["neutre"]))
+            text += f" <@&{config['roles']['grades']['neutre']}>"
+            await user.add_roles(ctx.guild.get_role(config["roles"]["grades"]["allié"]))
+            text += f", <@&{config['roles']['grades']['allié']}>"
+        elif relation == "Ami":
+            await user.add_roles(ctx.guild.get_role(config["roles"]["grades"]["neutre"]))
+            text += f" <@&{config['roles']['grades']['neutre']}>"
+            await user.add_roles(ctx.guild.get_role(config["roles"]["grades"]["allié"]))
+            text += f", <@&{config['roles']['grades']['allié']}>"
+            await user.add_roles(ctx.guild.get_role(config["roles"]["grades"]["ami"]))
+            text += f", <@&{config['roles']['grades']['ami']}>"
+
+
+        embed = utils.create_embed(self.bot, title="Rôles obtenus :", description=f"{text}", color=Color.gold())
+        await ctx.channel.send(embed=embed)
+        await ctx.respond(f"{user.mention} a bien été enregistré.")
 
     # Command /bvn
     # @commands.slash_command(description="Permet de finir le recrutement d'un candidat.", default_permission=False)
@@ -445,7 +481,7 @@ class Recrutement(commands.Cog):
     async def on_member_join(self, member):
         guild = self.bot.get_guild(config["guild_id"])
         channel = guild.get_channel(config["channels"]["hub_recrutement"])
-        await channel.send(f"# Bienvenue sur le discord {member.mention} :wave:\nLe Guyana :flag_gy: est ravi de t'accueillir. Pour accéder au reste du discord, tu vas devoir vocal avec un responsable :\n> - Si tu viens pour rejoindre le pays, il faut que tu vocal avec un <@&{config['roles']['grades']['recruteur']}>.\n> - Si tu viens pour autre chose, il faut que tu vocal avec un <@&{config['roles']['grades']['officier']}>.\n\n:point_down: Précise ci-dessous pourquoi tu es là et quand es-tu disponible pour vocal. Si tu as le moindre problème, demande nous ! On est là pour ça.")
+        await channel.send(f"# Bienvenue sur le discord {member.mention} :wave:\nLe Guyana :flag_gy: est ravi de t'accueillir. Pour accéder au reste du discord, tu vas devoir vocal avec un responsable :\n\n> - Si tu viens pour rejoindre le pays, il faut que tu vocal avec un <@&{config['roles']['grades']['recruteur']}>.\n> - Si tu viens pour autre chose, il faut que tu vocal avec un <@&{config['roles']['grades']['officier']}>.\n\n:point_down: Précise ci-dessous pourquoi tu es là et quand es-tu disponible pour vocal. Si tu as le moindre problème, demande nous ! On est là pour ça.")
         await member.add_roles(guild.get_role(config["roles"]["grades"]["reglement_valider"]))
 
     # Quand mp
