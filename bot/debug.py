@@ -1,9 +1,10 @@
 import asyncio
 import datetime
 import json
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 
 import discord
+import pytz
 import requests
 from discord import Option, Forbidden, Color
 from discord.ext import commands
@@ -33,15 +34,27 @@ class Debug(commands.Cog):
     async def start_check_loop(self):
         while True:
             await asyncio.create_task(self.recrutement_check())
-            await asyncio.sleep(12 * 60 * 60)
+            await asyncio.sleep(3 * 60 * 60)
+            await asyncio.create_task(self.rank_check())
+            await asyncio.sleep(3 * 60 * 60)
+            await asyncio.create_task(self.rank_check())
+            await asyncio.sleep(3 * 60 * 60)
+            await asyncio.create_task(self.rank_check())
+            await asyncio.sleep(3 * 60 * 60)
             await asyncio.create_task(self.diplomatique_check())
-            await asyncio.sleep(12 * 60 * 60)
+            await asyncio.sleep(3 * 60 * 60)
+            await asyncio.create_task(self.rank_check())
+            await asyncio.sleep(3 * 60 * 60)
+            await asyncio.create_task(self.rank_check())
+            await asyncio.sleep(3 * 60 * 60)
+            await asyncio.create_task(self.rank_check())
+            await asyncio.sleep(3 * 60 * 60)
 
     # ------------------------------------------------------------------------------------------
     #                                         Commands
     # ------------------------------------------------------------------------------------------
 
-    # groupe create
+    # groupe forcecheck
     forcecheck = discord.SlashCommandGroup("forcecheck", "forcecheck related commands")
 
     # Command /informations
@@ -397,11 +410,9 @@ class Debug(commands.Cog):
         await ctx.respond(embed=embed)
 
     # Command /fc-recrutement
-    @forcecheck.command(name="recrutement", description="Actualise le statut d'une personne.",
-                            default_permission=False)
+    @forcecheck.command(name="recrutement", description="Actualise le statut d'une personne.", default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["officier"])
-    async def force_check_recrutement(self, ctx: discord.ApplicationContext,
-                                      user: Option(discord.User, "Entre un utilisateur.", required=False)):
+    async def force_check_recrutement(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=False)):
         guild = self.bot.get_guild(config["guild_id"])
 
         if user is not None:
@@ -462,11 +473,9 @@ class Debug(commands.Cog):
             await self.recrutement_check()
 
     # Command /fc-diplomatique
-    @forcecheck.command(name="diplomatique", description="Actualise le statut d'une personne.",
-                            default_permission=False)
+    @forcecheck.command(name="diplomatique", description="Actualise le statut d'une personne.", default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["officier"])
-    async def force_check_diplomatie(self, ctx: discord.ApplicationContext,
-                                     user: Option(discord.User, "Entre un utilisateur.", required=False)):
+    async def force_check_diplomatie(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=False)):
         guild = self.bot.get_guild(config["guild_id"])
 
         if user is not None:
@@ -547,7 +556,389 @@ class Debug(commands.Cog):
         await ctx.channel.send(embed=embed, view=PingCommandView(self.bot))
 
     # ------------------------------------------------------------------------------------------
-    #                               Éléments supplémentaires
+    #                                   Loops check
+    # ------------------------------------------------------------------------------------------
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        await self.start_check_loop()
+
+    # ------------------------------------------------------------------------------------------
+    #                                   Rank check et commands
+    # ------------------------------------------------------------------------------------------
+
+    async def rank_check(self):
+        guild = self.bot.get_guild(config["guild_id"])
+        membre_confirme = guild.get_channel(config["channels"]["vote_membres_confirmés"])
+        officier = guild.get_channel(config["channels"]["vote_officiers"])
+        data_log = guild.get_channel(config["channels"]["data_log"])
+        yes = self.bot.get_emoji(config["yes"])
+        no = self.bot.get_emoji(config["no"])
+        membre_confirme_messages = await membre_confirme.history().flatten()
+        officier_messages = await officier.history().flatten()
+        longueur = len(membre_confirme_messages) + len(officier_messages)
+        cur = self.bot.countrydb.cursor()
+
+        with tqdm(total=longueur, unit="messages", ascii="⬡⬢", bar_format='{l_bar}{bar:25}{r_bar}{bar:-10b}',
+                  desc="Check des messages de rank-up ") as line1:
+            if longueur == 0:
+                await data_log.send("Pas de procédure de rank-up en cours.")
+                return
+            bar = await data_log.send(line1)
+            for message in officier_messages:
+
+                if (datetime.now(pytz.utc) - message.created_at.astimezone(pytz.utc)) <= timedelta(days=1):
+                    start_date = message.embeds[0].to_dict()["fields"][0]["value"]
+                    age = message.embeds[0].to_dict()["fields"][1]["value"]
+                    user_executant = message.embeds[0].to_dict()["fields"][2]["value"]
+                    pseudo_ig = message.embeds[0].to_dict()["fields"][3]["value"]
+                    rank = message.embeds[0].to_dict()["fields"][4]["value"]
+                    user_id = user_executant.strip("<@!>")
+
+                    cur = self.bot.countrydb.cursor()
+                    temp = cur.execute("SELECT * FROM recrutement WHERE pseudo_ingame=?", [pseudo_ig]).fetchone()
+                    if temp is not None:
+                        data = {
+                            "id_sys": temp[0],
+                            "id_discord": temp[1],
+                            "pseudo_ingame": temp[2],
+                            "annee_naissance": temp[3],
+                            "experience": temp[4],
+                            "grade": temp[5],
+                            "country": temp[6],
+                            "peut_quitter_pays": temp[7],
+                            "date_recrutement": temp[8],
+                            "anciennete": temp[9],
+                            "schematique": temp[10],
+                            "regiment": temp[11],
+                            "last_connection": temp[12],
+                            "absence_fin": temp[13],
+                            "referent": temp[14]
+                        }
+                        user_cible = guild.get_member(data["id_discord"])
+                    else:
+                        data = None
+
+                    guild = self.bot.get_guild(config["guild_id"])
+
+                    if rank == "Recrue Confirmé":
+                        for reaction in message.reactions:
+                            if reaction.emoji.id == config["no"]:
+                                reaction_count = reaction.count
+                                break
+                        if reaction_count == 1:
+                            try:
+                                await user_cible.send(
+                                    f"Félicitation, ton rank-up Recrue Confirmé a été accepté. Tu doit maintenant vocal avec la personne qui a supporter ton rank ({user_executant}) pour finaliser ton passage Recrue Confirmé.")
+                            except Forbidden:
+                                pass
+                            await message.delete()
+                            embed = utils.create_embed(self.bot,
+                                                       f"Rank-up de {data['pseudo_ingame']} Recrue confirmé (attente de vocal)",
+                                                       description=f"Cette personne a validé son rank-up et doit maintenant être pris en vocal pour obtenir son grade.",
+                                                       color=Color.green())
+                            embed.add_field(name="Statut :", value=f"Attente vocal")
+                            embed.add_field(name="Pseudo :",
+                                            value=f"{pseudo_ig}")
+                            embed.add_field(name="Grade :", value=f"{rank}")
+                            embed.add_field(name="Proposé au rank-up par :", value=f"{user_executant}")
+                            embed.add_field(name="Début de l'attente vocal :", value=f"{datetime.now()}")
+                            await officier.send(embed=embed)
+                            user_referent = guild.get_member(int(user_id))
+                            await user_referent.send(f"Le rank-up de {user_cible.mention} a été validé. En tant que référent, tu doit le prendre en vocal pour le former sur son nouveau grade puis confirmé son rank-up avec `/rank confirme`.\n\n**Voici un rappel des éléments qu'il débloque avec son rank-up :**\nMinistère du travail* : les recrues confirmées débloquent ce ministère. Ils peuvent maintenant rejoindre des projets d'équipe sous supervision d’un plus haut gradé.\nMinistère des schématiques : les recrues confirmés peuvent devenir des builders du pays. Elles ont maintenant accès à la liste de tous les builds du pays. Elles peuvent se signaler sur un projet et le réaliser, seul ou à plusieurs, sur NG Island.\nMinistère des armées : les recrues confirmées peuvent devenir des soldats de la grande armée en se signalant auprès d’un ministre et en prouvant ses capacités au cours d’un test.\nDroit à un chunk en mer pour poser des machines et panneaux solairs.\n\n\\**Il est important de distinguer le ministère de l’économie et celui du travail. Le ministère de l’économie permet aux recrues de farmé de diverses manières en totale autonomie, sans supervision. Les transferts d’argents s'opèrent par des coffres automatiques. Le ministère du travail propose quant à lui des sources de revenus plus complexes, nécessitant une supervision et un travail à plusieurs.*")
+                        else:
+                            embed = utils.create_embed(self.bot,
+                                                       f"Rank-up de {data['pseudo_ingame']} Recrue confirmé",
+                                                       description=f"Face a l'opposition d'un officier au rank-up, tout les officiers sont invité a voté d'ici 24h avec pour (:yes:) ou contre (:no:). La majorité est nécessaire pour rank up. L'absence de vote sera considérer comme blanc.",
+                                                       color=Color.green())
+                            embed.add_field(name="Début du vote :", value=f"{datetime.now()}")
+                            embed.add_field(name="Ancienneté dans le pays :",
+                                            value=f"{(date.today() - date.fromisoformat(data['date_recrutement'])).days} jours")
+                            embed.add_field(name="Proposé au rank-up par :", value=f"{user_executant}")
+                            embed.add_field(name="Pseudo IG :", value=f"{data['pseudo_ingame']}")
+                            embed.add_field(name="Rank-up vers :", value=f"Recrue Confirmé (vote)")
+                            msg = await officier.send(embed=embed)
+                            await msg.add_reaction(yes)
+                            await msg.add_reaction(no)
+                            await message.delete()
+
+                    elif rank == "Recrue Confirmé (vote)":
+                        for reaction in message.reactions:
+                            if reaction.emoji.id == config["yes"]:
+                                yes_count = (reaction.count - 1)
+                                break
+                        for reaction in message.reactions:
+                            if reaction.emoji.id == config["no"]:
+                                no_count = (reaction.count - 1)
+                                break
+                        if yes_count >= no_count:
+                            try:
+                                await user_cible.send(
+                                    f"Félicitation, ton rank-up Recrue Confirmé a été accepté. Tu doit maintenant vocal avec la personne qui a supporter ton rank ({user_executant}) pour finaliser ton passage Recrue Confirmé.")
+                            except Forbidden:
+                                pass
+                            await message.delete()
+                            embed = utils.create_embed(self.bot,
+                                                       f"Rank-up de {data['pseudo_ingame']} Recrue confirmé (attente de vocal)",
+                                                       description=f"Cette personne a validé son rank-up et doit maintenant être pris en vocal pour obtenir son grade.",
+                                                       color=Color.green())
+                            embed.add_field(name="Statut :", value=f"Attente vocal")
+                            embed.add_field(name="Pseudo :",
+                                            value=f"{pseudo_ig}")
+                            embed.add_field(name="Grade :", value=f"{rank}")
+                            embed.add_field(name="Proposé au rank-up par :", value=f"{user_executant}")
+                            embed.add_field(name="Début de l'attente vocal :", value=f"{datetime.now()}")
+                            await officier.send(embed=embed)
+                            user_referent = guild.get_member(int(user_id))
+                            await user_referent.send(f"Le rank-up de {user_cible.mention} a été validé. En tant que référent, tu doit le prendre en vocal pour le former sur son nouveau grade puis confirmé son rank-up avec `/rank confirme`.\n\n**Voici un rappel des éléments qu'il débloque avec son rank-up :**\nMinistère du travail* : les recrues confirmées débloquent ce ministère. Ils peuvent maintenant rejoindre des projets d'équipe sous supervision d’un plus haut gradé.\nMinistère des schématiques : les recrues confirmés peuvent devenir des builders du pays. Elles ont maintenant accès à la liste de tous les builds du pays. Elles peuvent se signaler sur un projet et le réaliser, seul ou à plusieurs, sur NG Island.\nMinistère des armées : les recrues confirmées peuvent devenir des soldats de la grande armée en se signalant auprès d’un ministre et en prouvant ses capacités au cours d’un test.\nDroit à un chunk en mer pour poser des machines et panneaux solairs.\n\n\\**Il est important de distinguer le ministère de l’économie et celui du travail. Le ministère de l’économie permet aux recrues de farmé de diverses manières en totale autonomie, sans supervision. Les transferts d’argents s'opèrent par des coffres automatiques. Le ministère du travail propose quant à lui des sources de revenus plus complexes, nécessitant une supervision et un travail à plusieurs.*")
+                        else:
+                            try:
+                                await user_cible.send(
+                                    f"Malheureusement, ton rank-up Recrue Confirmé a été refusé. N'hésite pas a contacter un officier pour lui demander plus d'information.")
+                            except Forbidden:
+                                pass
+                            await message.delete()
+
+                    elif rank == "Officier":
+                        for reaction in message.reactions:
+                            if reaction.emoji.id == config["yes"]:
+                                yes_count_offi = -1
+                                yes_count_gouv = 0
+                                async for user in reaction.users():
+                                    if user.get_role(config["roles"]["grades"]["gouverneur"]):
+                                        yes_count_gouv += 1
+                                    else:
+                                        yes_count_offi += 1
+                                break
+                        for reaction in message.reactions:
+                            if reaction.emoji.id == config["yes"]:
+                                no_count_offi = -1
+                                no_count_gouv = 0
+                                async for user in reaction.users():
+                                    if user.get_role(config["roles"]["grades"]["gouverneur"]):
+                                        no_count_gouv += 1
+                                    else:
+                                        no_count_offi += 1
+                                break
+                        if no_count_gouv == 0 or ((yes_count_offi + yes_count_gouv) >= (
+                                no_count_offi + no_count_gouv) and yes_count_gouv >= no_count_gouv):
+                            try:
+                                await user_cible.send(
+                                    f"Félicitation, ton rank-up Officier a été accepté. Tu doit maintenant vocal avec la personne qui a supporter ton rank ({user_executant}) pour finaliser ton passage Officier.")
+                            except Forbidden:
+                                pass
+                            await message.delete()
+                            embed = utils.create_embed(self.bot,
+                                                       f"Rank-up de {data['pseudo_ingame']} Officier (attente de vocal)",
+                                                       description=f"Cette personne a validé son rank-up et doit maintenant être pris en vocal pour obtenir son grade.",
+                                                       color=Color.green())
+                            embed.add_field(name="Statut :", value=f"Attente vocal")
+                            embed.add_field(name="Pseudo :",
+                                            value=f"{pseudo_ig}")
+                            embed.add_field(name="Grade :", value=f"{rank}")
+                            embed.add_field(name="Proposé au rank-up par :", value=f"{user_executant}")
+                            embed.add_field(name="Début de l'attente vocal :", value=f"{datetime.now()}")
+                            await officier.send(embed=embed)
+                        else:
+                            try:
+                                await user_cible.send(
+                                    f"Malheureusement, ton rank-up Officier a été refusé. N'hésite pas a contacter un officier pour lui demander plus d'information.")
+                            except Forbidden:
+                                pass
+                            await message.delete()
+
+                if (datetime.now(pytz.utc) - message.created_at.astimezone(pytz.utc)) >= timedelta(days=14):
+                    await message.delete()
+
+                line1.update(1)
+                await bar.edit(content=line1)
+
+            for message in membre_confirme_messages:
+
+                if (datetime.now(pytz.utc) - message.created_at.astimezone(pytz.utc)) >= timedelta(days=1):
+                    start_date = message.embeds[0].to_dict()["fields"][0]["value"]
+                    age = message.embeds[0].to_dict()["fields"][1]["value"]
+                    user_executant = message.embeds[0].to_dict()["fields"][2]["value"]
+                    pseudo_ig = message.embeds[0].to_dict()["fields"][3]["value"]
+                    rank = message.embeds[0].to_dict()["fields"][4]["value"]
+                    user_id = user_executant.strip("<@!>")
+
+                    cur = self.bot.countrydb.cursor()
+                    temp = cur.execute("SELECT * FROM recrutement WHERE pseudo_ingame=?", [pseudo_ig]).fetchone()
+                    if temp is not None:
+                        data = {
+                            "id_sys": temp[0],
+                            "id_discord": temp[1],
+                            "pseudo_ingame": temp[2],
+                            "annee_naissance": temp[3],
+                            "experience": temp[4],
+                            "grade": temp[5],
+                            "country": temp[6],
+                            "peut_quitter_pays": temp[7],
+                            "date_recrutement": temp[8],
+                            "anciennete": temp[9],
+                            "schematique": temp[10],
+                            "regiment": temp[11],
+                            "last_connection": temp[12],
+                            "absence_fin": temp[13],
+                            "referent": temp[14]
+                        }
+                        user_cible = guild.get_member(data["id_discord"])
+                    else:
+                        data = None
+
+                    guild = self.bot.get_guild(config["guild_id"])
+
+                    if rank == "Membre":
+                        for reaction in message.reactions:
+                            if reaction.emoji.id == config["no"]:
+                                reaction_count = reaction.count
+                                break
+                        if reaction_count == 1:
+                            try:
+                                await user_cible.send(
+                                    f"Félicitation, ton rank-up Membre a été validé. Tu doit maintenant vocal avec la personne qui a supporter ton rank ({user_executant}) pour finaliser ton passage Membre.")
+                            except Forbidden:
+                                pass
+                            await message.delete()
+                            embed = utils.create_embed(self.bot,
+                                                       f"Rank-up de {data['pseudo_ingame']} Membre (attente de vocal)",
+                                                       description=f"Cette personne a validé son rank-up et doit maintenant être pris en vocal pour obtenir son grade.",
+                                                       color=Color.green())
+                            embed.add_field(name="Statut :", value=f"Attente vocal")
+                            embed.add_field(name="Pseudo :",
+                                            value=f"{pseudo_ig}")
+                            embed.add_field(name="Grade :", value=f"{rank}")
+                            embed.add_field(name="Proposé au rank-up par :", value=f"{user_executant}")
+                            embed.add_field(name="Début de l'attente vocal :", value=f"{datetime.now()}")
+                            await officier.send(embed=embed)
+                            user_referent = guild.get_member(int(user_id))
+                            await user_referent.send(
+                                f"Le rank-up de {user_cible.mention} a été validé. En tant que référent, tu doit le prendre en vocal pour le former sur son nouveau grade puis confirmé son rank-up avec `/rank confirme`.\n\n**Voici un rappel des éléments qu'il débloque avec son rank-up :**\nDiscord : Salon Membre.\nMinistère de l’immigration : plus grande nouveauté, les membres peuvent devenir des recruteurs en faisant la demande a un ministre. Ils peuvent ainsi contribuer à la grande et lourde tâche qu’est assuré le renouvellement du pays.\nMinistère du travail : les membres peuvent supervisé des projets.\nMinistère des communications internationales : devenir cadreur, orateur, monteur, ou scripteur (COMS).")
+                        else:
+                            embed = utils.create_embed(self.bot, f"Rank-up de {data['pseudo_ingame']} Membre",
+                                                       description=f"Face a l'opposition d'un officier ou d'un membre confirmé au rank-up, tout les officiers et membres confirmés sont invité a voté d'ici 24h avec pour (:yes:) ou contre (:no:). La majorité est nécessaire pour rank up. L'absence de vote sera considérer comme blanc.",
+                                                       color=Color.green())
+                            embed.add_field(name="Début du vote :", value=f"{datetime.now()}")
+                            embed.add_field(name="Ancienneté dans le pays :",
+                                            value=f"{(date.today() - date.fromisoformat(data['date_recrutement'])).days} jours")
+                            embed.add_field(name="Proposé au rank-up par :", value=f"{user_executant}")
+                            embed.add_field(name="Pseudo IG :", value=f"{data['pseudo_ingame']}")
+                            embed.add_field(name="Rank-up vers :", value=f"Membre (vote)")
+                            msg = await membre_confirme.send(embed=embed)
+                            await msg.add_reaction(yes)
+                            await msg.add_reaction(no)
+                            await message.delete()
+
+                    elif rank == "Membre (vote)":
+                        for reaction in message.reactions:
+                            if reaction.emoji.id == config["yes"]:
+                                yes_count = (reaction.count - 1)
+                                break
+                        for reaction in message.reactions:
+                            if reaction.emoji.id == config["no"]:
+                                no_count = (reaction.count - 1)
+                                break
+                        if yes_count >= no_count:
+                            try:
+                                await user_cible.send(
+                                    f"Félicitation, ton rank-up Membre a été validé. Tu doit maintenant vocal avec la personne qui a supporter ton rank ({user_executant}) pour finaliser ton passage Membre.")
+                            except Forbidden:
+                                pass
+                            await message.delete()
+                            embed = utils.create_embed(self.bot,
+                                                       f"Rank-up de {data['pseudo_ingame']} Membre (attente de vocal)",
+                                                       description=f"Cette personne a validé son rank-up et doit maintenant être pris en vocal pour obtenir son grade.",
+                                                       color=Color.green())
+                            embed.add_field(name="Statut :", value=f"Attente vocal")
+                            embed.add_field(name="Pseudo :",
+                                            value=f"{pseudo_ig}")
+                            embed.add_field(name="Grade :", value=f"{rank}")
+                            embed.add_field(name="Proposé au rank-up par :", value=f"{user_executant}")
+                            embed.add_field(name="Début de l'attente vocal :", value=f"{datetime.now()}")
+                            await officier.send(embed=embed)
+                            user_referent = guild.get_member(int(user_id))
+                            await user_referent.send(
+                                f"Le rank-up de {user_cible.mention} a été validé. En tant que référent, tu doit le prendre en vocal pour le former sur son nouveau grade puis confirmé son rank-up avec `/rank confirme`.\n\n**Voici un rappel des éléments qu'il débloque avec son rank-up :**\nDiscord : Salon Membre.\nMinistère de l’immigration : plus grande nouveauté, les membres peuvent devenir des recruteurs en faisant la demande a un ministre. Ils peuvent ainsi contribuer à la grande et lourde tâche qu’est assuré le renouvellement du pays.\nMinistère du travail : les membres peuvent supervisé des projets.\nMinistère des communications internationales : devenir cadreur, orateur, monteur, ou scripteur (COMS).")
+                        else:
+                            try:
+                                await user_cible.send(
+                                    f"Malheureusement, ton rank-up Membre a été refusé. N'hésite pas a contacter un officier pour lui demander plus d'information.")
+                            except Forbidden:
+                                pass
+                            await message.delete()
+
+                    elif rank == "Membre Confirmé":
+                        for reaction in message.reactions:
+                            if reaction.emoji.id == config["yes"]:
+                                yes_count_offi = 0
+                                yes_count_member_confirme = -1
+                                async for user in reaction.users():
+                                    if user.get_role(config["roles"]["grades"]["officier"]):
+                                        yes_count_offi += 1
+                                    else:
+                                        yes_count_member_confirme += 1
+                                break
+                        for reaction in message.reactions:
+                            if reaction.emoji.id == config["yes"]:
+                                no_count_offi = 0
+                                no_count_member_confirme = -1
+                                async for user in reaction.users():
+                                    if user.get_role(config["roles"]["grades"]["officier"]):
+                                        no_count_offi += 1
+                                    else:
+                                        no_count_member_confirme += 1
+                                break
+                        if (yes_count_offi >= no_count_offi and (yes_count_member_confirme + yes_count_offi) >= (
+                                no_count_member_confirme + no_count_offi)) or yes_count_offi / (
+                                yes_count_offi + no_count_offi) >= 0.7:
+                            try:
+                                await user_cible.send(
+                                    f"Félicitation, ton rank-up Membre Confirmé a été validé. Tu doit maintenant vocal avec la personne qui a supporter ton rank ({user_executant}) pour finaliser ton passage Membre Confirmé.")
+                            except Forbidden:
+                                pass
+                            await message.delete()
+                            embed = utils.create_embed(self.bot,
+                                                       f"Rank-up de {data['pseudo_ingame']} Membre Confirmé (attente de vocal)",
+                                                       description=f"Cette personne a validé son rank-up et doit maintenant être pris en vocal pour obtenir son grade.",
+                                                       color=Color.green())
+                            embed.add_field(name="Statut :", value=f"Attente vocal")
+                            embed.add_field(name="Pseudo :",
+                                            value=f"{pseudo_ig}")
+                            embed.add_field(name="Grade :", value=f"{rank}")
+                            embed.add_field(name="Proposé au rank-up par :", value=f"{user_executant}")
+                            embed.add_field(name="Début de l'attente vocal :", value=f"{datetime.now()}")
+                            await officier.send(embed=embed)
+                            user_referent = guild.get_member(int(user_id))
+                            await user_referent.send(
+                                f"Le rank-up de {user_cible.mention} a été validé. En tant que référent, tu doit le prendre en vocal pour le former sur son nouveau grade puis confirmé son rank-up avec `/rank confirme`.\n\n**Voici un rappel des éléments qu'il débloque avec son rank-up :**\nDiscord : bien qu’ils ne soient pas catégorisés comme “hauts-gradé”, les membres confirmés ont la visibilité sur tous les salons hauts-gradés.\nMinistère des schématiques : accès au serveur de build privé du pays.\nMinistère de la coordination interministérielle : Vous pouvez être invité à parler pour évoquer un sujet de la semaine (vue avant le début de la CUR et avec votre accord).")
+                        else:
+                            try:
+                                await user_cible.send(
+                                    f"Malheureusement, ton rank-up Membre Confirmé a été refusé. N'hésite pas a contacter un officier pour lui demander plus d'information.")
+                            except Forbidden:
+                                pass
+                            await message.delete()
+
+                if (datetime.now(pytz.utc) - message.created_at.astimezone(pytz.utc)) >= timedelta(days=14):
+                    await message.delete()
+
+                line1.update(1)
+                await bar.edit(content=line1)
+
+        await data_log.send(f"Vérification ranks terminé !")
+        self.bot.countrydb.commit()
+        cur.close()
+
+    @forcecheck.command(description="Lance immédiatement le check des rank-up en cours.",
+                            default_permission=False, name="rank")
+    @commands.has_any_role(config["roles"]["grades"]["officier"])
+    async def force_check_rank(self, ctx: discord.ApplicationContext):
+        await ctx.respond("Check des ranks lancé.")
+        await self.rank_check()
+
+    # ------------------------------------------------------------------------------------------
+    #                               Recrutement et diplomatique check
     # ------------------------------------------------------------------------------------------
 
     async def recrutement_check(self):
@@ -669,7 +1060,7 @@ class Debug(commands.Cog):
 
         # Inactivité
         if api_data is not None:
-            jours_deco = (date.today() - datetime.datetime.fromisoformat(api_data["last_connection"]).date()).days
+            jours_deco = (date.today() - datetime.fromisoformat(api_data["last_connection"]).date()).days
             cur.execute("UPDATE recrutement SET last_connection=? WHERE id_discord=?",
                         [jours_deco, db_data["id_discord"]])
 
@@ -847,11 +1238,6 @@ class Debug(commands.Cog):
         cur.close()
         await data_log.send(
             f"Check de la db diplomatique terminé ! Sur un total de ``{data_number}`` personnes, ``{Unrecognized}`` n'ont pas été reconnue (``{(Unrecognized / data_number) * 100}%``). ``{Delete}`` personnes ont quitter le discord et ont donc été supprimer de la db diplomatique. Le bot a rencontré ``{API_error}`` erreurs d'API.")
-
-    @commands.Cog.listener()
-    async def on_ready(self):
-        await self.start_check_loop()
-
 
 class PingCommandView(View):
     def __init__(self, bot: GuyaBot):
