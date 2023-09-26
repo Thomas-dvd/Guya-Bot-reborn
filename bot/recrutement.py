@@ -47,7 +47,10 @@ class Recrutement(commands.Cog):
     # Command /create-recrue
     @create.command(name="recrue", description="Enregistrer une nouvelle recrue.", default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["recruteur"])
-    async def create_recrue(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=True), pseudo: Option(str, "pseudo IG.", required=True), age: Option(int, "Age.", required=False)):
+    async def create_recrue(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=True), pseudo: Option(str, "pseudo IG.", required=True), regiment: Option(str, "Régiment du joueur.", choices=config["regiments"], required=True), referent: Option(discord.User, "Référent du joueur", required=False), age: Option(int, "Age.", required=False)):
+
+        if referent is None:
+            referent = ctx.user.id
 
         data = {
             "id_discord": user.id,
@@ -55,7 +58,7 @@ class Recrutement(commands.Cog):
             "annee_naissance": (date.today().year - age) if age is not None else -1,
             "date_recrutement": date.today(),
             "experience": "create user",
-            "referent": ctx.user.id,
+            "referent": referent,
             "grade": 1
         }
 
@@ -73,7 +76,11 @@ class Recrutement(commands.Cog):
             cur.close()
             return
 
-        cur = self.bot.countrydb.cursor()
+        temp = cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [data["referent"]]).fetchone()
+
+        if temp[5] <= 2:
+            data["referent"] = temp[14]
+
         cur.execute("INSERT INTO recrutement (id_discord, pseudo_ingame, annee_naissance, date_recrutement, referent, grade, experience) VALUES (:id_discord, :pseudo_ingame, :annee_naissance, :date_recrutement, :referent, :grade, :experience)", data)
         self.bot.countrydb.commit()
         cur.close()
@@ -95,6 +102,8 @@ class Recrutement(commands.Cog):
         text += f"<@&{config['roles']['grades']['neutre']}>"
 
         await user.remove_roles(ctx.guild.get_role((config["roles"]["grades"]["frontiere"])))
+        await user.add_roles(ctx.guild.get_role(config["roles"]["regiments"][regiment]))
+        text += f"<@&{config['roles']['regiments'][regiment]}>"
 
         embed = utils.create_embed(self.bot, title="Rôles obtenus :", description=f"{text}", color=Color.gold())
         await ctx.channel.send(embed=embed)

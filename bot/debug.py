@@ -363,38 +363,26 @@ class Debug(commands.Cog):
 
         embed = utils.create_embed(self.bot, f"Référent {user}", color=Color.green())
         if temp[14] is None:
-            embed.add_field(name="Référent :", value=f"Pas de référent")
+            embed.add_field(name="Référent :", value=f"Pas de référent.")
         else:
             if temp[5] >= 3:
-                referent_tier_on = ""
+                membre_referent = "Sans compagnie"
             else:
-                referent_tier_on = f"Membre référent :\n<@{temp[14]}>"
+                membre_referent = f"Dans la compagnie de :\n<@{temp[14]}>"
 
             temp2 = cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [temp[14]]).fetchone()
-            if temp[5] >= 4:
-                referent_tier_two = ""
-            else:
-                if temp2[5] >= 4:
-                    referent_tier_two = f"Membre+ référent :\n<@{temp[14]}>"
-                else:
-                    referent_tier_two = f"Membre+ référent :\n<@{temp2[14]}>"
 
-            temp3 = cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [temp2[14]]).fetchone()
-            if temp[5] >= 5:
-                referent_tier_three = ""
+            if temp2[5] >= 5:
+                officier_referent = f"Dans le régiment de :\n<@{temp[14]}>"
             else:
-                if temp2[5] >= 5:
-                    referent_tier_three = f"Officier référent :\n<@{temp[14]}>"
-                elif temp3[5] >= 5:
-                    referent_tier_three = f"Officier référent :\n<@{temp2[14]}>"
+                temp3 = cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [temp2[14]]).fetchone()
+                if temp3[5] >= 5:
+                    officier_referent = f"Dans le régiment de :\n<@{temp2[14]}>"
                 else:
-                    referent_tier_three = f"Officier référent :\n<@{temp3[14]}>"
-
-            temp4 = cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [temp3[14]]).fetchone()
-            referent_tier_four = f"Leader référent :\n<@{temp4[14]}>"
+                    officier_referent = f"Dans le régiment de :\n<@{temp3[14]}>"
 
             embed.add_field(name="Référent :",
-                            value=f"{referent_tier_on}\n{referent_tier_two}\n{referent_tier_three}\n{referent_tier_four}")
+                            value=f"{membre_referent}\n{officier_referent}")
 
         temp = cur.execute("SELECT id_discord FROM recrutement WHERE referent=?", [user.id]).fetchall()
 
