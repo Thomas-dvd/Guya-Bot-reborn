@@ -15,7 +15,7 @@ class GuyaBot(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix="/", case_insensitive=True, intents=discord.Intents.all())
 
-        self.load_extensions("recrutement", "rank", "debug")
+        self.load_extensions("recrutement", "rank", "debug", "dette")
 
         self.countrydb = sqlite3.connect("country.db")
         self.worlddb = sqlite3.connect("world.db")
