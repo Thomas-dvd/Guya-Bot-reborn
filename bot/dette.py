@@ -4,6 +4,7 @@ import json
 import random
 from datetime import date
 from datetime import timedelta
+import sqlite3
 from sqlite3 import IntegrityError
 
 import discord
@@ -27,7 +28,7 @@ def setup(bot):
     bot.add_cog(Dette(bot))
 
 
-class dette(commands.Cog):
+class Dette(commands.Cog):
 
     def __init__(self, bot: GuyaBot):
         self.bot = bot
@@ -40,8 +41,10 @@ class dette(commands.Cog):
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS dette (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            id_debiteur TEXT NOT NULL,
-            id_crediteur TEXT NOT NULL,
+            id_debiteur INTEGER NOT NULL,
+            id_crediteur INTEGER NOT NULL,
+            name_debiteur TEXT NOT NULL,
+            name_crediteur TEST NOT NULL,
             montant INTEGER NOT NULL,
             description TEXT,
             active INTEGER NOT NULL DEFAULT 1
@@ -51,28 +54,28 @@ class dette(commands.Cog):
         conn.commit()
         conn.close()
 
-    def add_dette(self, id_debiteur, id_crediteur, montant, description):
-        conn = sqlite3.connect('votre_base_de_donnees.db')
+    def add_dette(self, id_debiteur, id_crediteur, name_debiteur, name_crediteur, montant, description):
+        conn = sqlite3.connect('dette.db')
         cursor = conn.cursor()
 
-        cursor.execute("INSERT INTO dette (id_debiteur, id_crediteur, montant, description, active) VALUES (?, ?, ?, ?, 1)",
-                       (id_debiteur, id_crediteur, montant, description))
+        cursor.execute("INSERT INTO dette (id_debiteur, id_crediteur, name_debiteur, name_crediteur, montant, description, active) VALUES (?, ?, ?, ?, ?, ?, 1)",
+                       (id_debiteur, id_crediteur, name_debiteur, name_crediteur, montant, description))
 
         conn.commit()
         conn.close()
 
     @commands.slash_command(name="ajout-dette", description="Ajoute une dette", default_permission=False)
-    async def ajout_dette(self, ctx: ApplicationContext, 
-                          de: Option(Member, "Sélectionnez la personne qui doit de l'argent"), 
-                          a: Option(Member, "Sélectionnez la personne à qui l'argent est dû"), 
+    async def ajout_dette(self, ctx: discord.ApplicationContext, 
+                          de: Option(discord.User, "Sélectionnez la personne qui doit de l'argent"), 
+                          a: Option(discord.User, "Sélectionnez la personne à qui l'argent est dû"), 
                           montant: Option(int, "Entrez le montant de la dette"),
                           description: Option(str, "Entrez une description de la dette", required=False)):
         
-        self.add_dette(de.id, a.id, montant, description)
+        self.add_dette(de.id, a.id, de.name, a.name, montant, description)
         await ctx.respond(f"Ajout d'une dette de {de.mention} à {a.mention} d'un montant de {montant}. Description: {description}")
 
     def get_dettes_debiteur(self, id_debiteur):
-        conn = sqlite3.connect('votre_base_de_donnees.db')
+        conn = sqlite3.connect('dette.db')
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM dette WHERE id_debiteur = ? AND active = 1", (id_debiteur,))
         dettes = cursor.fetchall()
@@ -80,62 +83,85 @@ class dette(commands.Cog):
         return dettes
 
     def get_dettes_crediteur(self, id_crediteur):
-        conn = sqlite3.connect('votre_base_de_donnees.db')
+        conn = sqlite3.connect('dette.db')
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM dette WHERE id_crediteur = ? AND active = 1", (id_crediteur,))
         dettes = cursor.fetchall()
         conn.close()
         return dettes
 
+   
     def get_resume_dettes(self):
-        conn = sqlite3.connect('votre_base_de_donnees.db')
+        conn = sqlite3.connect('dette.db')
         cursor = conn.cursor()
-        cursor.execute("SELECT id_debiteur, id_crediteur, SUM(montant) as total FROM dette WHERE active = 1 GROUP BY id_debiteur, id_crediteur")
+        cursor.execute("SELECT id, id_debiteur, id_crediteur, name_debiteur, name_crediteur, montant, description FROM dette WHERE active = 1")
         dettes = cursor.fetchall()
 
         resume = {}
         for dette in dettes:
-            debiteur, crediteur, montant = dette
-            if debiteur not in resume:
-                resume[debiteur] = {}
-            if crediteur not in resume[debiteur]:
-                resume[debiteur][crediteur] = 0
-            resume[debiteur][crediteur] += montant
-            if crediteur in resume and debiteur in resume[crediteur]:
-                if resume[debiteur][crediteur] > resume[crediteur][debiteur]:
-                    resume[debiteur][crediteur] -= resume[crediteur][debiteur]
-                    del resume[crediteur][debiteur]
+            id_dette, id_debiteur, id_crediteur, name_debiteur, name_crediteur, montant, description = dette
+            key = (name_debiteur, name_crediteur)
+
+            if key not in resume:
+                resume[key] = {'total': 0, 'dettes': []}
+
+            resume[key]['total'] += montant
+            resume[key]['dettes'].append(f"{id_dette}: {description} - {montant}")
+
+        # Compensation des dettes réciproques
+        keys_a_traiter = list(resume.keys())
+        for key in keys_a_traiter:
+            if key in resume and key[::-1] in resume:
+                debiteur, crediteur = key
+                inverse_key = (crediteur, debiteur)
+
+                if resume[key]['total'] > resume[inverse_key]['total']:
+                    montant_compensation = resume[inverse_key]['total']
+                    dettes_compensées = '\n'.join(f"        {dette}" for dette in resume[inverse_key]['dettes'])
+                    resume[key]['total'] -= montant_compensation
+                    resume[key]['dettes'].append(f"    Compensation pour dette inverse de {montant_compensation}:\n{dettes_compensées}")
+                    del resume[inverse_key]
+                elif resume[key]['total'] < resume[inverse_key]['total']:
+                    montant_compensation = resume[key]['total']
+                    dettes_compensées = '\n'.join(f"        {dette}" for dette in resume[key]['dettes'])
+                    resume[inverse_key]['total'] -= montant_compensation
+                    resume[inverse_key]['dettes'].append(f"    Compensation pour dette inverse de {montant_compensation}:\n{dettes_compensées}")
+                    del resume[key]
                 else:
-                    resume[crediteur][debiteur] -= resume[debiteur][crediteur]
-                    del resume[debiteur][crediteur]
+                    del resume[key]
+                    del resume[inverse_key]
 
         conn.close()
         return resume
 
+
     @commands.slash_command(name="mes_dettes", description="Affiche les dettes que j'ai envers d'autres personnes")
-    async def mes_dettes(self, ctx: ApplicationContext):
+    async def mes_dettes(self, ctx: discord.ApplicationContext):
         dettes = self.get_dettes_debiteur(str(ctx.author.id))
-        embed = Embed(title="Mes Dettes", color=0x00ff00)
+        embed = discord.Embed(title="Mes Dettes", color=0x00ff00)
         for dette in dettes:
-            _, id_crediteur, montant, description, _ = dette
-            embed.add_field(name=f"Créditeur: {id_crediteur}", value=f"Montant: {montant}\nDescription: {description}", inline=False)
+            _, _, _, _, name_crediteur, montant, description, _ = dette
+            embed.add_field(name=f"Créditeur: {name_crediteur}", value=f"Montant: {montant}\nDescription: {description}", inline=False)
         await ctx.respond(embed=embed)
 
     @commands.slash_command(name="dettes_envers_moi", description="Affiche les dettes que d'autres ont envers moi")
-    async def dettes_envers_moi(self, ctx: ApplicationContext):
+    async def dettes_envers_moi(self, ctx: discord.ApplicationContext):
         dettes = self.get_dettes_crediteur(str(ctx.author.id))
-        embed = Embed(title="Dettes envers Moi", color=0x00ff00)
+        embed = discord.Embed(title="Dettes envers Moi", color=0x00ff00)
         for dette in dettes:
-            id_debiteur, _, montant, description, _ = dette
-            embed.add_field(name=f"Débiteur: {id_debiteur}", value=f"Montant: {montant}\nDescription: {description}", inline=False)
+            _, _, _, name_debiteur, _, montant, description, _ = dette
+            embed.add_field(name=f"Débiteur: {name_debiteur}", value=f"Montant: {montant}\nDescription: {description}", inline=False)
         await ctx.respond(embed=embed)
 
     @commands.slash_command(name="resume_dettes", description="Affiche un résumé de toutes les dettes")
-    async def resume_dettes(self, ctx: ApplicationContext):
+    async def resume_dettes(self, ctx: discord.ApplicationContext):
         resume = self.get_resume_dettes()
-        embed = Embed(title="Résumé des Dettes", color=0x00ff00)
-        for debiteur in resume:
-            for crediteur in resume[debiteur]:
-                montant = resume[debiteur][crediteur]
-                embed.add_field(name=f"Débiteur: {debiteur} → Créditeur: {crediteur}", value=f"Montant: {montant}", inline=False)
+        embed = discord.Embed(title="Résumé des Dettes", color=0x00ff00)
+
+        for key, value in resume.items():
+            debiteur, crediteur = key
+            dettes_info = '\n'.join(f"    {dette}" for dette in value['dettes'])  # Indentation pour chaque dette
+            embed.add_field(name=f"{debiteur} → {crediteur}", value=f"Montant total dû: {value['total']}\nDettes:\n{dettes_info}\n", inline=False)
+
         await ctx.respond(embed=embed)
+
