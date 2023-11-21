@@ -135,7 +135,7 @@ class Dette(commands.Cog):
         return resume
 
 
-    def supprimer_dette(self, id_dette):
+    def supprimer_dette_in_database(self, id_dette):
         conn = sqlite3.connect('dette.db')
         cursor = conn.cursor()
 
@@ -179,5 +179,5 @@ class Dette(commands.Cog):
 
     @commands.slash_command(name="supprimer_dette", description="Supprimer une dette une fois remboursé")
     async def supprimer_dette(self, ctx: discord.ApplicationContext, id_dette: Option(int, "ID de la dette a supprimer")):
-        self.supprimer_dette(id_dette)
+        self.supprimer_dette_in_database(id_dette)
         await ctx.respond(f"Dette ID {id_dette} a été remboursée.")
