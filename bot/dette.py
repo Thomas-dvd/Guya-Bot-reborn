@@ -34,7 +34,7 @@ class dette(commands.Cog):
         self.initialize_database()
 
     def initialize_database(self):
-        conn = sqlite3.connect('votre_base_de_donnees.db')
+        conn = sqlite3.connect('dette.db')
         cursor = conn.cursor()
 
         cursor.execute('''
