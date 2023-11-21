@@ -135,6 +135,18 @@ class Dette(commands.Cog):
         return resume
 
 
+    def supprimer_dette(self, id_dette):
+        conn = sqlite3.connect('dette.db')
+        cursor = conn.cursor()
+
+        cursor.execute("UPDATE dette SET active = 0 WHERE id = ?", (id_dette,))
+
+        conn.commit()
+        conn.close()
+        return None
+
+
+
     @commands.slash_command(name="mes_dettes", description="Affiche les dettes que j'ai envers d'autres personnes")
     async def mes_dettes(self, ctx: discord.ApplicationContext):
         dettes = self.get_dettes_debiteur(str(ctx.author.id))
@@ -165,3 +177,7 @@ class Dette(commands.Cog):
 
         await ctx.respond(embed=embed)
 
+    @commands.slash_command(name="supprimer_dette", description="Supprimer une dette une fois remboursé")
+    async def supprimer_dette(self, ctx: discord.ApplicationContext, id_dette: Option(int, "ID de la dette a supprimer")):
+        self.supprimer_dette(id_dette)
+        await ctx.respond(f"Dette ID {id_dette} a été remboursée.")
