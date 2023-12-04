@@ -23,19 +23,13 @@ with open("config.json", encoding="utf-8") as f:
 
 
 def setup(bot):
-    print('Loading cog recrutement')
-    bot.add_cog(Recrutement(bot))
+    print('Loading cog recruitement')
+    bot.add_cog(Recruitement(bot))
 
 
-class Recrutement(commands.Cog):
+class Recruitement(commands.Cog):
     def __init__(self, bot: GuyaBot):
         self.bot = bot
-
-    # Cooldown pour Check des salons discord AFK
-    # async def start_check_loop(self):
-    #     while True:
-    #         await asyncio.sleep(6 * 60 * 60)
-    #         await asyncio.create_task(self.discord_channel_check())
 
     # ------------------------------------------------------------------------------------------
     #                                         Commands

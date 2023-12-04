@@ -13,6 +13,7 @@ from tqdm import tqdm
 
 import utils
 from main import GuyaBot
+from utils import database
 
 with open("config.json", encoding="utf-8") as f:
     config = json.load(f)
@@ -63,13 +64,10 @@ class Debug(commands.Cog):
     async def informations(self, ctx: discord.ApplicationContext,user: Option(discord.User, "Entre un utilisateur.", required=True),de: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"],required=False, default="Pays")):
 
         if de == "Pays":
-            cur = self.bot.countrydb.cursor()
-            cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [user.id])
-            temp = cur.fetchone()
+            temp = database(self, "country", "discord_id", user.id)
             if temp is None:
                 await ctx.respond("Utilisateur absent de la base de donnée de pays")
                 return
-            cur.close()
 
             age = (date.today().year - temp[3]) if temp[3] != -1 else -1
 

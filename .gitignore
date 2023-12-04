@@ -1,8 +1,8 @@
 .env
 database.countrydb
 config.json
-devconfig.json
-trueconfig.json
+dev_config.json
+true_config.json
 
 .idea/
 __pycache__/

@@ -15,10 +15,9 @@ class GuyaBot(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix="/", case_insensitive=True, intents=discord.Intents.all())
 
-        self.load_extensions("recrutement", "rank", "debug", "dette")
+        self.load_extensions("recruitement", "rank", "debug", "dette")
 
-        self.countrydb = sqlite3.connect("country.db")
-        self.worlddb = sqlite3.connect("world.db")
+        self.players = sqlite3.connect("players.db")
 
     async def on_ready(self):
         print(f"{self.user.name}#{self.user.discriminator} is online !")
@@ -26,7 +25,7 @@ class GuyaBot(commands.Bot):
         await self.change_presence(activity=game)
         guild = self.get_guild(config["guild_id"])
         data_log = guild.get_channel(config["channels"]["data_log"])
-        await data_log.send("Bot démarrer !")
+        await data_log.send("Bot démarré !")
 
     async def on_application_command_error(self, ctx: discord.ApplicationContext, error: discord.DiscordException):
         if isinstance(error, (commands.MissingAnyRole, commands.MissingRole)):
