@@ -1,0 +1,10 @@
+# Les grades de la bdd
+Valeur -> Nom classique -> Nom cours
+0 -> Nouvelle recrue -> Recrue
+1 -> Recrue confirmé -> Recrue+
+2 -> Membre          -> Membre
+3 -> Membre confirmé -> Membre+
+4 -> Officier        -> Offi
+5 -> Gouverneur      -> Gouv
+6 -> Second          -> Second
+  -> Leader          -> Leader (pas de distinction Leader/Second par le bot)

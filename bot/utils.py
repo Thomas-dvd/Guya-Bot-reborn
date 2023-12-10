@@ -1,7 +1,12 @@
+import json
+
 import discord
 from discord import Color
 
 from main import GuyaBot
+
+with open("config.json", encoding="utf-8") as f:
+    config = json.load(f)
 
 
 def create_embed(bot: GuyaBot, title=None, description=None, color: Color = None):
@@ -15,8 +20,7 @@ def create_embed(bot: GuyaBot, title=None, description=None, color: Color = None
 # database function
 def database(self, table, field, value):
     cur = self.bot.players.cursor()
-    cur.execute(f"SELECT * FROM {table} WHERE {field}={value}")
-    temp = cur.fetchone()
+    temp = cur.execute(f"SELECT * FROM {table} WHERE {field}={value}").fetchone()
     if temp is None:
         return None
     elif table == "country":
@@ -43,3 +47,29 @@ def database(self, table, field, value):
             "ingame_name": temp[2]
         }
     return data
+
+
+# default grades
+async def default_grades(self, ctx, user):
+    try:
+        await user.edit(nick=None)
+    except discord.errors.Forbidden:
+        pass
+    for role in user.roles:
+        try:
+            if role.name != "@everyone":
+                await user.remove_roles(ctx.guild.get_role(role.id))
+        except discord.errors.Forbidden or discord.errors.NotFound:
+            pass
+
+    text = ""
+
+    await user.add_roles(ctx.guild.get_role(config["grades"]["neutre"]))
+    text += f" <@&{config['grades']['neutre']}>"
+
+    for role in config["grade"]["deco"]["global"]:
+        await user.add_roles(ctx.guild.get_role(role))
+        text += f", <@&{role}>"
+
+    embed = create_embed(self.bot, title=f"Rôles obtenus par {user.name}:", description=f"{text}", color=Color.gold())
+    await ctx.channel.send(embed=embed)

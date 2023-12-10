@@ -66,7 +66,7 @@ class Debug(commands.Cog):
         if de == "Pays":
             temp = database(self, "country", "discord_id", user.id)
             if temp is None:
-                await ctx.respond("Utilisateur absent de la base de donnée de pays")
+                await ctx.respond("Utilisateur absent de la base de données de pays")
                 return
 
             age = (date.today().year - temp[3]) if temp[3] != -1 else -1
@@ -95,7 +95,7 @@ class Debug(commands.Cog):
             cur.execute("SELECT * FROM diplomatie WHERE id_discord=?", [user.id])
             temp = cur.fetchone()
             if temp is None:
-                await ctx.respond("Utilisateur absent de la base de donnée diplomatique")
+                await ctx.respond("Utilisateur absent de la base de données diplomatique")
                 return
             cur.close()
 
@@ -124,7 +124,7 @@ class Debug(commands.Cog):
             cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [user.id])
             temp = cur.fetchone()
             if temp is None:
-                await ctx.respond("Utilisateur absent de la base de donnée de pays")
+                await ctx.respond("Utilisateur absent de la base de données de pays")
                 return
             if donnée == "*ID Système":
                 cur.execute(f"UPDATE recrutement SET id_sys=? WHERE id_discord=?", [valeur, user.id])
@@ -201,7 +201,7 @@ class Debug(commands.Cog):
             cur.execute("SELECT * FROM diplomatie WHERE id_discord=?", [user.id])
             temp = cur.fetchone()
             if temp is None:
-                await ctx.respond("Utilisateur absent de la base de donnée diplomatique")
+                await ctx.respond("Utilisateur absent de la base de données diplomatique")
                 return
             if donnée == "*ID Système":
                 cur.execute(f"UPDATE diplomatie SET id_sys=? WHERE id_discord=?", [valeur, user.id])
@@ -264,7 +264,7 @@ class Debug(commands.Cog):
         await ctx.respond(f"La donnée {donnée} du joueur {user.mention} a bien été définit sur ``{valeur}``.")
 
     # Command /transfert
-    @commands.slash_command(description="Transfert un joueur de base de donnée.", default_permission=False)
+    @commands.slash_command(description="Transfert un joueur de base de données.", default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["officier"])
     async def transfert(self, ctx: discord.ApplicationContext,user: Option(discord.User, "Entre un utilisateur.", required=True)):
 
@@ -296,7 +296,7 @@ class Debug(commands.Cog):
             self.bot.countrydb.commit()
             cur.close()
             await ctx.respond(
-                f"L'utilisateur {user.mention} a bien été transférer de la base de donnée diplomatique a celle du pays. Bienvenue a lui dans le pays :wave:")
+                f"L'utilisateur {user.mention} a bien été transférer de la base de données diplomatique a celle du pays. Bienvenue a lui dans le pays :wave:")
 
         else:
 
@@ -314,7 +314,7 @@ class Debug(commands.Cog):
             self.bot.countrydb.commit()
             cur.close()
             await ctx.respond(
-                f"L'utilisateur {user.mention} a bien été transférer de la base de donnée de pays a celle de diplomatie.")
+                f"L'utilisateur {user.mention} a bien été transférer de la base de données de pays a celle de diplomatie.")
 
     # Command /create_user
     # @commands.slash_command(name="create-user", description="Crée un utilisateur.", default_permission=False)
@@ -356,7 +356,7 @@ class Debug(commands.Cog):
         cur = self.bot.countrydb.cursor()
         temp = cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [user.id]).fetchone()
         if temp is None:
-            await ctx.respond("Utilisateur absent de la base de donnée de pays")
+            await ctx.respond("Utilisateur absent de la base de données de pays")
             return
 
         embed = utils.create_embed(self.bot, f"Référent {user}", color=Color.green())

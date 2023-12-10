@@ -1,30 +1,12 @@
-import asyncio
 import json
 from datetime import date, timedelta, datetime
 
-import pytz
-
-# from Merge_Pictures import merge_image
-
 import discord
-from discord import Option, Color, Forbidden
+from discord import Option, Color
 from discord.ext import commands
-from tqdm import tqdm
 
 import utils
 from main import GuyaBot
-
-# background = Image.open('images/background.png')
-# lv1 = Image.open('images/1.png')
-# lv2 = Image.open('images/2.png')
-# lv3 = Image.open('images/3.png')
-# animateur_barre = Image.open('images/animateur_barre.png')
-# builder_barre = Image.open('images/builder_barre.png')
-# farmer_barre = Image.open('images/farmer_barre.png')
-# journaliste_barre = Image.open('images/journaliste_barre.png')
-# recruteur_barre = Image.open('images/recruteur_barre.png')
-# soldat_barre = Image.open('images/soldat_barre.png')
-
 
 with open("config.json", encoding="utf-8") as f:
     config = json.load(f)
@@ -858,7 +840,7 @@ class Rank(commands.Cog):
         cur = self.bot.countrydb.cursor()
         data_user = cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [ctx.user.id]).fetchone()
         if data_user is None:
-            await ctx.respond(f"Tu n'est pas enregistrer dans notre base de donnée, merci de suivre les indications du bot dans ton ticket ou de lancer une procédure depuis le {config['channels']['unregister']}.")
+            await ctx.respond(f"Tu n'est pas enregistrer dans notre base de données, merci de suivre les indications du bot dans ton ticket ou de lancer une procédure depuis le {config['channels']['unregister']}.")
         else:
             if data_user[5] == 1:
                 age = date.today() - date.fromisoformat(data_user[8])
