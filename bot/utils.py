@@ -31,14 +31,15 @@ def database(self, table, field, value):
             "recruitment_date": temp[3],
             "grade": temp[4],
             "country": temp[5],
-            "statut": temp[6],
-            "age_badge": temp[7],
-            "speaker_badge": temp[8],
-            "dc_badge": temp[9],
-            "schemalink_badge": temp[10],
-            "soldat_badge": temp[11],
-            "recruiter_badge": temp[12],
-            "animator_badge": temp[13]
+            "last_connection": temp[6],
+            "absence": temp[7],
+            "age_badge": temp[8],
+            "speaker_badge": temp[9],
+            "dc_badge": temp[10],
+            "schemalink_badge": temp[11],
+            "soldat_badge": temp[12],
+            "recruiter_badge": temp[13],
+            "animator_badge": temp[14]
         }
     else:
         data = {

@@ -13,14 +13,13 @@ from tqdm import tqdm
 
 import utils
 from main import GuyaBot
-from utils import database
 
 with open("config.json", encoding="utf-8") as f:
     config = json.load(f)
 
 
 def setup(bot):
-    print('Loading cog debug')
+    print('Loading cog management')
     bot.add_cog(Debug(bot))
 
 
@@ -35,21 +34,9 @@ class Debug(commands.Cog):
     async def start_check_loop(self):
         while True:
             await asyncio.create_task(self.recrutement_check())
-            await asyncio.sleep(3 * 60 * 60)
-            await asyncio.create_task(self.rank_check())
-            await asyncio.sleep(3 * 60 * 60)
-            await asyncio.create_task(self.rank_check())
-            await asyncio.sleep(3 * 60 * 60)
-            await asyncio.create_task(self.rank_check())
-            await asyncio.sleep(3 * 60 * 60)
+            await asyncio.sleep(12 * 60 * 60)
             await asyncio.create_task(self.diplomatique_check())
-            await asyncio.sleep(3 * 60 * 60)
-            await asyncio.create_task(self.rank_check())
-            await asyncio.sleep(3 * 60 * 60)
-            await asyncio.create_task(self.rank_check())
-            await asyncio.sleep(3 * 60 * 60)
-            await asyncio.create_task(self.rank_check())
-            await asyncio.sleep(3 * 60 * 60)
+            await asyncio.sleep(12 * 60 * 60)
 
     # ------------------------------------------------------------------------------------------
     #                                         Commands
@@ -60,64 +47,66 @@ class Debug(commands.Cog):
 
     # Command /informations
     @commands.slash_command(description="Donne toute les informations d'une personne.", default_permission=False)
-    @commands.has_any_role(config["roles"]["grades"]["officier"])
-    async def informations(self, ctx: discord.ApplicationContext,user: Option(discord.User, "Entre un utilisateur.", required=True),de: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"],required=False, default="Pays")):
+    @commands.has_any_role(config["grades"]["officier"])
+    async def informations(self, ctx: discord.ApplicationContext,
+                           user: Option(discord.User, "Entre un utilisateur.", required=True)):
 
-        if de == "Pays":
-            temp = database(self, "country", "discord_id", user.id)
-            if temp is None:
-                await ctx.respond("Utilisateur absent de la base de données de pays")
+        data = utils.database(self, "country", "discord_id", user.id)
+        if data is None:
+            data = utils.database(self, "diplomacy", "discord_id", user.id)
+            if data is None:
+                await ctx.respond("Utilisateur absent de la base de données.")
                 return
 
-            age = (date.today().year - temp[3]) if temp[3] != -1 else -1
+        total_pack = len(data) // 20
+        if len(data) % 20 != 0:
+            total_pack += 1
 
-            embed = utils.create_embed(self.bot, f"Informations de {user}", color=Color.brand_red())
-            embed.add_field(name="ID Système :", value=f"{temp[0]}")
-            embed.add_field(name="ID discord :", value=f"{temp[1]}")
-            embed.add_field(name="Pseudo IG :", value=f"{temp[2]}")
-            embed.add_field(name="Age :", value=f"{age}")
-            embed.add_field(name="Experience :", value=f"{temp[4]}")
-            embed.add_field(name="Grade :", value=f"{temp[5]}")
-            embed.add_field(name="Pays :", value=f"{temp[6]}")
-            embed.add_field(name="Peut quitter le pays :", value=f"{temp[7]}")
-            embed.add_field(name="Date recrutement :", value=f"{temp[8]}")
-            embed.add_field(name="Ancienneté :", value=f"{temp[9]}")
-            embed.add_field(name="Schématique :", value=f"{temp[10]}")
-            embed.add_field(name="Régiment :", value=f"{temp[11]}")
-            embed.add_field(name="Dernière connexion :", value=f"{temp[12]}")
-            embed.add_field(name="Fin d'absence :", value=f"{temp[13]}")
-            embed.add_field(name="Référent :", value=f"{temp[14]}")
+        for i in range(1, total_pack + 1):
+            embed = utils.create_embed(self.bot, f"Informations de {user}, partie {i}/{total_pack}",
+                                       color=Color.brand_red())
+            for name, value in data.items():
+                embed.add_field(name=f"{name} :", value=f"{value}")
 
-            await ctx.respond(embed=embed)
-
-        else:
-            cur = self.bot.worlddb.cursor()
-            cur.execute("SELECT * FROM diplomatie WHERE id_discord=?", [user.id])
-            temp = cur.fetchone()
-            if temp is None:
-                await ctx.respond("Utilisateur absent de la base de données diplomatique")
-                return
-            cur.close()
-
-            embed = utils.create_embed(self.bot, f"Informations de {user}", color=Color.brand_red())
-            embed.add_field(name="ID Système :", value=f"{temp[0]}")
-            embed.add_field(name="ID discord :", value=f"{temp[1]}")
-            embed.add_field(name="Pseudo IG :", value=f"{temp[2]}")
-
-            await ctx.respond(embed=embed)
+            if i == 0:
+                await ctx.respond(embed=embed)
+            else:
+                await ctx.channel.send(embed=embed)
 
     # Command /edit
-    @commands.slash_command(name="édit", description="Donne toute les informations d'une personne.", default_permission=False)
+    @commands.slash_command(name="édit", description="Donne toute les informations d'une personne.",
+                            default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["officier"])
-    async def edit(self, ctx: discord.ApplicationContext,user: Option(discord.User, "Entre un utilisateur.", required=True), donnée: Option(str,"Paramètre a modifier (Ceux marquer d'une * sont disponible pour les diplomaties.", choices=["* ID Système","*ID Discord","*Pseudo IG","Age","Experience","Grade","Pays","Peut quitter le pays","Date recrutement","Ancienneté","Schématique","Régiment","Dernière connexion","Fin d'absence","Référent"]),valeur: Option(str, "Nouvelle valeur (None pour Null).", required=True),de: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"], required=False,default="Pays")):
+    async def edit(self, ctx: discord.ApplicationContext,
+                   user: Option(discord.User, "Entre un utilisateur.", required=True), donnée: Option(str,
+                                                                                                      "Paramètre a modifier (Ceux marquer d'une * sont disponible pour les diplomaties.",
+                                                                                                      choices=[
+                                                                                                          "* ID Système",
+                                                                                                          "*ID Discord",
+                                                                                                          "*Pseudo IG",
+                                                                                                          "Age",
+                                                                                                          "Experience",
+                                                                                                          "Grade",
+                                                                                                          "Pays",
+                                                                                                          "Peut quitter le pays",
+                                                                                                          "Date recrutement",
+                                                                                                          "Ancienneté",
+                                                                                                          "Schématique",
+                                                                                                          "Régiment",
+                                                                                                          "Dernière connexion",
+                                                                                                          "Fin d'absence",
+                                                                                                          "Référent"]),
+                   valeur: Option(str, "Nouvelle valeur (None pour Null).", required=True),
+                   de: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"], required=False,
+                              default="Pays")):
 
-        if donnée in ["*ID Système", "ID Discord", "Age", "Grade", "Peut quitter pays", "Ancienneté", "Dernière connexion"]:
+        if donnée in ["*ID Système", "ID Discord", "Age", "Grade", "Peut quitter pays", "Ancienneté",
+                      "Dernière connexion"]:
             valeur = int(valeur)
         if valeur in ["None", "none"]:
             valeur = None
         if donnée == "Age":
             valeur2 = (date.today().year - valeur) if valeur != "-1" else -1
-
 
         if de == "Pays":
             cur = self.bot.countrydb.cursor()
@@ -154,7 +143,7 @@ class Debug(commands.Cog):
                         return
                 else:
                     user_grade = \
-                    cur.execute("SELECT grade FROM recrutement WHERE pseudo_ingame =?", [valeur]).fetchone()[0]
+                        cur.execute("SELECT grade FROM recrutement WHERE pseudo_ingame =?", [valeur]).fetchone()[0]
                     grade_list = ["Candidat", "Recrue", "Recrue+", "Membre", "Membre+", "Officier", "Gouverneur"]
                     user_grade = grade_list[user_grade]
                     try:
@@ -266,7 +255,8 @@ class Debug(commands.Cog):
     # Command /transfert
     @commands.slash_command(description="Transfert un joueur de base de données.", default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["officier"])
-    async def transfert(self, ctx: discord.ApplicationContext,user: Option(discord.User, "Entre un utilisateur.", required=True)):
+    async def transfert(self, ctx: discord.ApplicationContext,
+                        user: Option(discord.User, "Entre un utilisateur.", required=True)):
 
         cur = self.bot.countrydb.cursor()
         temp = cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [user.id]).fetchone()
@@ -350,8 +340,11 @@ class Debug(commands.Cog):
     #             f"L'utilisateur {user.mention} a bien été enregistrer sous le pseudo ``{pseudo}`` dans la base de donnée diplomatique")
 
     # Command /referent
-    @commands.slash_command(name="référent",description="Informe sur son référent et les personnes donc on est référent.",default_permission=False)
-    async def referent(self, ctx: discord.ApplicationContext,user: Option(discord.User, "Entre un utilisateur.", required=True)):
+    @commands.slash_command(name="référent",
+                            description="Informe sur son référent et les personnes donc on est référent.",
+                            default_permission=False)
+    async def referent(self, ctx: discord.ApplicationContext,
+                       user: Option(discord.User, "Entre un utilisateur.", required=True)):
 
         cur = self.bot.countrydb.cursor()
         temp = cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [user.id]).fetchone()
@@ -359,7 +352,7 @@ class Debug(commands.Cog):
             await ctx.respond("Utilisateur absent de la base de données de pays")
             return
 
-        embed = utils.create_embed(self.bot, f"Référent {user}", color=Color.green())
+        embed = utils.create_embed(self.bot, f"Référent {user}", color=Color.red())
         if temp[14] is None:
             embed.add_field(name="Référent :", value=f"Pas de référent.")
         else:
@@ -398,7 +391,8 @@ class Debug(commands.Cog):
     # Command /fc-recrutement
     @forcecheck.command(name="recrutement", description="Actualise le statut d'une personne.", default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["officier"])
-    async def force_check_recrutement(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=False)):
+    async def force_check_recrutement(self, ctx: discord.ApplicationContext,
+                                      user: Option(discord.User, "Entre un utilisateur.", required=False)):
         guild = self.bot.get_guild(config["guild_id"])
 
         if user is not None:
@@ -459,9 +453,11 @@ class Debug(commands.Cog):
             await self.recrutement_check()
 
     # Command /fc-diplomatique
-    @forcecheck.command(name="diplomatique", description="Actualise le statut d'une personne.", default_permission=False)
+    @forcecheck.command(name="diplomatique", description="Actualise le statut d'une personne.",
+                        default_permission=False)
     @commands.has_any_role(config["roles"]["grades"]["officier"])
-    async def force_check_diplomatie(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=False)):
+    async def force_check_diplomatie(self, ctx: discord.ApplicationContext,
+                                     user: Option(discord.User, "Entre un utilisateur.", required=False)):
         guild = self.bot.get_guild(config["guild_id"])
 
         if user is not None:
@@ -507,7 +503,8 @@ class Debug(commands.Cog):
                         "country_rank": response.json()["servers"]["green"]["country_rank"],
                     }
                     if len(f"{api_data['country']} | {db_data['pseudo_ingame']} ({api_data['country_rank']})") <= 32:
-                        await user.edit(nick=f"{api_data['country']} | {db_data['pseudo_ingame']} ({api_data['country_rank']})")
+                        await user.edit(
+                            nick=f"{api_data['country']} | {db_data['pseudo_ingame']} ({api_data['country_rank']})")
                     elif len(f"{api_data['country']} | {db_data['pseudo_ingame']}") <= 32:
                         await user.edit(nick=f"{api_data['country']} | {db_data['pseudo_ingame']}")
                     else:
@@ -521,7 +518,8 @@ class Debug(commands.Cog):
             await self.diplomatique_check()
 
     # Command /goldpass-list
-    @commands.slash_command(description="Donne la liste des absences longues durées.", default_permission=False, name="goldpass-list")
+    @commands.slash_command(description="Donne la liste des absences longues durées.", default_permission=False,
+                            name="goldpass-list")
     @commands.has_any_role(config["roles"]["grades"]["gouverneur"])
     async def goldpass_list(self, ctx):
         special_date = "2050-01-01"
@@ -537,7 +535,7 @@ class Debug(commands.Cog):
     async def pings(self, ctx):
         embed = utils.create_embed(self.bot, title="**Pings :**",
                                    description=f"Tu peux choisir des pings personnalisés :\n\n<@&{config['roles']['pings']['notations']}> : Pour être mentionné pour les notations du pays (une fois par semaine).\n\n<@&{config['roles']['pings']['discord']}> : Pour être mentionné pour les mises a jours du discord, les nouveautés.\n\n<@&{config['roles']['pings']['media']}> : Pour être mentionné pour les vidéos et lives des membres du pays.\n\n<@&{config['roles']['pings']['secondaire']}> : Pour être mentionné pour les informations secondaires, les événements auxquelles ont participe hors de NationsGlory.\n\nCes paramètres peuvent être modifiés avec la commande ``/pings``",
-                                   color=Color.gold())
+                                   color=Color.red())
 
         await ctx.channel.send(embed=embed, view=PingCommandView(self.bot))
 
@@ -622,7 +620,7 @@ class Debug(commands.Cog):
                             embed = utils.create_embed(self.bot,
                                                        f"Rank-up de {data['pseudo_ingame']} Recrue confirmé (attente de vocal)",
                                                        description=f"Cette personne a validé son rank-up et doit maintenant être pris en vocal pour obtenir son grade.",
-                                                       color=Color.green())
+                                                       color=Color.red())
                             embed.add_field(name="Statut :", value=f"Attente vocal")
                             embed.add_field(name="Pseudo :",
                                             value=f"{pseudo_ig}")
@@ -631,12 +629,13 @@ class Debug(commands.Cog):
                             embed.add_field(name="Début de l'attente vocal :", value=f"{datetime.now()}")
                             await officier.send(embed=embed)
                             user_referent = guild.get_member(int(user_id))
-                            await user_referent.send(f"Le rank-up de {user_cible.mention} a été validé. En tant que référent, tu doit le prendre en vocal pour le former sur son nouveau grade puis confirmé son rank-up avec `/rank confirme`.\n\n**Voici un rappel des éléments qu'il débloque avec son rank-up :**\nMinistère du travail* : les recrues confirmées débloquent ce ministère. Ils peuvent maintenant rejoindre des projets d'équipe sous supervision d’un plus haut gradé.\nMinistère des schématiques : les recrues confirmés peuvent devenir des builders du pays. Elles ont maintenant accès à la liste de tous les builds du pays. Elles peuvent se signaler sur un projet et le réaliser, seul ou à plusieurs, sur NG Island.\nMinistère des armées : les recrues confirmées peuvent devenir des soldats de la grande armée en se signalant auprès d’un ministre et en prouvant ses capacités au cours d’un test.\nDroit à un chunk en mer pour poser des machines et panneaux solairs.\n\n\\**Il est important de distinguer le ministère de l’économie et celui du travail. Le ministère de l’économie permet aux recrues de farmé de diverses manières en totale autonomie, sans supervision. Les transferts d’argents s'opèrent par des coffres automatiques. Le ministère du travail propose quant à lui des sources de revenus plus complexes, nécessitant une supervision et un travail à plusieurs.*")
+                            await user_referent.send(
+                                f"Le rank-up de {user_cible.mention} a été validé. En tant que référent, tu doit le prendre en vocal pour le former sur son nouveau grade puis confirmé son rank-up avec `/rank confirme`.\n\n**Voici un rappel des éléments qu'il débloque avec son rank-up :**\nMinistère du travail* : les recrues confirmées débloquent ce ministère. Ils peuvent maintenant rejoindre des projets d'équipe sous supervision d’un plus haut gradé.\nMinistère des schématiques : les recrues confirmés peuvent devenir des builders du pays. Elles ont maintenant accès à la liste de tous les builds du pays. Elles peuvent se signaler sur un projet et le réaliser, seul ou à plusieurs, sur NG Island.\nMinistère des armées : les recrues confirmées peuvent devenir des soldats de la grande armée en se signalant auprès d’un ministre et en prouvant ses capacités au cours d’un test.\nDroit à un chunk en mer pour poser des machines et panneaux solairs.\n\n\\**Il est important de distinguer le ministère de l’économie et celui du travail. Le ministère de l’économie permet aux recrues de farmé de diverses manières en totale autonomie, sans supervision. Les transferts d’argents s'opèrent par des coffres automatiques. Le ministère du travail propose quant à lui des sources de revenus plus complexes, nécessitant une supervision et un travail à plusieurs.*")
                         else:
                             embed = utils.create_embed(self.bot,
                                                        f"Rank-up de {data['pseudo_ingame']} Recrue confirmé",
                                                        description=f"Face a l'opposition d'un officier au rank-up, tout les officiers sont invité a voté d'ici 24h avec pour (:yes:) ou contre (:no:). La majorité est nécessaire pour rank up. L'absence de vote sera considérer comme blanc.",
-                                                       color=Color.green())
+                                                       color=Color.red())
                             embed.add_field(name="Début du vote :", value=f"{datetime.now()}")
                             embed.add_field(name="Ancienneté dans le pays :",
                                             value=f"{(date.today() - date.fromisoformat(data['date_recrutement'])).days} jours")
@@ -667,7 +666,7 @@ class Debug(commands.Cog):
                             embed = utils.create_embed(self.bot,
                                                        f"Rank-up de {data['pseudo_ingame']} Recrue confirmé (attente de vocal)",
                                                        description=f"Cette personne a validé son rank-up et doit maintenant être pris en vocal pour obtenir son grade.",
-                                                       color=Color.green())
+                                                       color=Color.red())
                             embed.add_field(name="Statut :", value=f"Attente vocal")
                             embed.add_field(name="Pseudo :",
                                             value=f"{pseudo_ig}")
@@ -676,7 +675,8 @@ class Debug(commands.Cog):
                             embed.add_field(name="Début de l'attente vocal :", value=f"{datetime.now()}")
                             await officier.send(embed=embed)
                             user_referent = guild.get_member(int(user_id))
-                            await user_referent.send(f"Le rank-up de {user_cible.mention} a été validé. En tant que référent, tu doit le prendre en vocal pour le former sur son nouveau grade puis confirmé son rank-up avec `/rank confirme`.\n\n**Voici un rappel des éléments qu'il débloque avec son rank-up :**\nMinistère du travail* : les recrues confirmées débloquent ce ministère. Ils peuvent maintenant rejoindre des projets d'équipe sous supervision d’un plus haut gradé.\nMinistère des schématiques : les recrues confirmés peuvent devenir des builders du pays. Elles ont maintenant accès à la liste de tous les builds du pays. Elles peuvent se signaler sur un projet et le réaliser, seul ou à plusieurs, sur NG Island.\nMinistère des armées : les recrues confirmées peuvent devenir des soldats de la grande armée en se signalant auprès d’un ministre et en prouvant ses capacités au cours d’un test.\nDroit à un chunk en mer pour poser des machines et panneaux solairs.\n\n\\**Il est important de distinguer le ministère de l’économie et celui du travail. Le ministère de l’économie permet aux recrues de farmé de diverses manières en totale autonomie, sans supervision. Les transferts d’argents s'opèrent par des coffres automatiques. Le ministère du travail propose quant à lui des sources de revenus plus complexes, nécessitant une supervision et un travail à plusieurs.*")
+                            await user_referent.send(
+                                f"Le rank-up de {user_cible.mention} a été validé. En tant que référent, tu doit le prendre en vocal pour le former sur son nouveau grade puis confirmé son rank-up avec `/rank confirme`.\n\n**Voici un rappel des éléments qu'il débloque avec son rank-up :**\nMinistère du travail* : les recrues confirmées débloquent ce ministère. Ils peuvent maintenant rejoindre des projets d'équipe sous supervision d’un plus haut gradé.\nMinistère des schématiques : les recrues confirmés peuvent devenir des builders du pays. Elles ont maintenant accès à la liste de tous les builds du pays. Elles peuvent se signaler sur un projet et le réaliser, seul ou à plusieurs, sur NG Island.\nMinistère des armées : les recrues confirmées peuvent devenir des soldats de la grande armée en se signalant auprès d’un ministre et en prouvant ses capacités au cours d’un test.\nDroit à un chunk en mer pour poser des machines et panneaux solairs.\n\n\\**Il est important de distinguer le ministère de l’économie et celui du travail. Le ministère de l’économie permet aux recrues de farmé de diverses manières en totale autonomie, sans supervision. Les transferts d’argents s'opèrent par des coffres automatiques. Le ministère du travail propose quant à lui des sources de revenus plus complexes, nécessitant une supervision et un travail à plusieurs.*")
                         else:
                             try:
                                 await user_cible.send(
@@ -717,7 +717,7 @@ class Debug(commands.Cog):
                             embed = utils.create_embed(self.bot,
                                                        f"Rank-up de {data['pseudo_ingame']} Officier (attente de vocal)",
                                                        description=f"Cette personne a validé son rank-up et doit maintenant être pris en vocal pour obtenir son grade.",
-                                                       color=Color.green())
+                                                       color=Color.red())
                             embed.add_field(name="Statut :", value=f"Attente vocal")
                             embed.add_field(name="Pseudo :",
                                             value=f"{pseudo_ig}")
@@ -790,7 +790,7 @@ class Debug(commands.Cog):
                             embed = utils.create_embed(self.bot,
                                                        f"Rank-up de {data['pseudo_ingame']} Membre (attente de vocal)",
                                                        description=f"Cette personne a validé son rank-up et doit maintenant être pris en vocal pour obtenir son grade.",
-                                                       color=Color.green())
+                                                       color=Color.red())
                             embed.add_field(name="Statut :", value=f"Attente vocal")
                             embed.add_field(name="Pseudo :",
                                             value=f"{pseudo_ig}")
@@ -804,7 +804,7 @@ class Debug(commands.Cog):
                         else:
                             embed = utils.create_embed(self.bot, f"Rank-up de {data['pseudo_ingame']} Membre",
                                                        description=f"Face a l'opposition d'un officier ou d'un membre confirmé au rank-up, tout les officiers et membres confirmés sont invité a voté d'ici 24h avec pour (:yes:) ou contre (:no:). La majorité est nécessaire pour rank up. L'absence de vote sera considérer comme blanc.",
-                                                       color=Color.green())
+                                                       color=Color.red())
                             embed.add_field(name="Début du vote :", value=f"{datetime.now()}")
                             embed.add_field(name="Ancienneté dans le pays :",
                                             value=f"{(date.today() - date.fromisoformat(data['date_recrutement'])).days} jours")
@@ -835,7 +835,7 @@ class Debug(commands.Cog):
                             embed = utils.create_embed(self.bot,
                                                        f"Rank-up de {data['pseudo_ingame']} Membre (attente de vocal)",
                                                        description=f"Cette personne a validé son rank-up et doit maintenant être pris en vocal pour obtenir son grade.",
-                                                       color=Color.green())
+                                                       color=Color.red())
                             embed.add_field(name="Statut :", value=f"Attente vocal")
                             embed.add_field(name="Pseudo :",
                                             value=f"{pseudo_ig}")
@@ -887,7 +887,7 @@ class Debug(commands.Cog):
                             embed = utils.create_embed(self.bot,
                                                        f"Rank-up de {data['pseudo_ingame']} Membre Confirmé (attente de vocal)",
                                                        description=f"Cette personne a validé son rank-up et doit maintenant être pris en vocal pour obtenir son grade.",
-                                                       color=Color.green())
+                                                       color=Color.red())
                             embed.add_field(name="Statut :", value=f"Attente vocal")
                             embed.add_field(name="Pseudo :",
                                             value=f"{pseudo_ig}")
@@ -917,7 +917,7 @@ class Debug(commands.Cog):
         cur.close()
 
     @forcecheck.command(description="Lance immédiatement le check des rank-up en cours.",
-                            default_permission=False, name="rank")
+                        default_permission=False, name="rank")
     @commands.has_any_role(config["roles"]["grades"]["officier"])
     async def force_check_rank(self, ctx: discord.ApplicationContext):
         await ctx.respond("Check des ranks lancé.")
@@ -1191,7 +1191,8 @@ class Debug(commands.Cog):
                     else:
                         if response.status_code != 200:
                             API_error += 1
-                        if (user.get_role(config["roles"]["grades"]["doyen"]) or user.get_role(config["roles"]["grades"]["conseiller"])) is None:
+                        if (user.get_role(config["roles"]["grades"]["doyen"]) or user.get_role(
+                                config["roles"]["grades"]["conseiller"])) is None:
                             try:  # Rename suivant situation
                                 if "error" in response.json():
                                     if response.json()["error"] == "unknown.user":  # Joueur non détecter
@@ -1224,6 +1225,7 @@ class Debug(commands.Cog):
         cur.close()
         await data_log.send(
             f"Check de la db diplomatique terminé ! Sur un total de ``{data_number}`` personnes, ``{Unrecognized}`` n'ont pas été reconnue (``{(Unrecognized / data_number) * 100}%``). ``{Delete}`` personnes ont quitter le discord et ont donc été supprimer de la db diplomatique. Le bot a rencontré ``{API_error}`` erreurs d'API.")
+
 
 class PingCommandView(View):
     def __init__(self, bot: GuyaBot):

@@ -8,3 +8,13 @@ Valeur -> Nom classique -> Nom cours
 5 -> Gouverneur      -> Gouv
 6 -> Second          -> Second
   -> Leader          -> Leader (pas de distinction Leader/Second par le bot)
+
+# Les couleurs des embeds
+Gold    -> Recruitement
+Red     -> Management
+Green   -> Promotment
+
+# Informations sur la base de données
+- Différence recruitement_date/age_badge: recruitement_date est la date de recrutement précise, seniority indique le
+niveau d'évolution dans le pays suivant des paliers d'anciennetés dans le pays (qui correspondent au néccessaire pour
+rank-up)
