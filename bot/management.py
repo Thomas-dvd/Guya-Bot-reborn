@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import json
+import os
 from datetime import date, timedelta, datetime
 
 import discord
@@ -76,41 +77,78 @@ class Debug(commands.Cog):
     # Command /edit
     @commands.slash_command(name="édit", description="Donne toute les informations d'une personne.",
                             default_permission=False)
-    @commands.has_any_role(config["roles"]["grades"]["officier"])
+    @commands.has_any_role(config["grades"]["gouverneur"])
     async def edit(self, ctx: discord.ApplicationContext,
-                   user: Option(discord.User, "Entre un utilisateur.", required=True), donnée: Option(str,
-                                                                                                      "Paramètre a modifier (Ceux marquer d'une * sont disponible pour les diplomaties.",
-                                                                                                      choices=[
-                                                                                                          "* ID Système",
-                                                                                                          "*ID Discord",
-                                                                                                          "*Pseudo IG",
-                                                                                                          "Age",
-                                                                                                          "Experience",
-                                                                                                          "Grade",
-                                                                                                          "Pays",
-                                                                                                          "Peut quitter le pays",
-                                                                                                          "Date recrutement",
-                                                                                                          "Ancienneté",
-                                                                                                          "Schématique",
-                                                                                                          "Régiment",
-                                                                                                          "Dernière connexion",
-                                                                                                          "Fin d'absence",
-                                                                                                          "Référent"]),
-                   valeur: Option(str, "Nouvelle valeur (None pour Null).", required=True),
-                   de: Option(str, "db de pays ou de diplomatie.", choices=["Pays", "Diplomatie"], required=False,
-                              default="Pays")):
+                   user: Option(discord.User, "Entre un utilisateur.", required=True), setting: Option(str, "paramètre a modifier", choices=utils.database_parametres(), name="paramètre"), value: Option(str, "nouvelle valeur", required=False, default=None, name="nouvelle valeur")):
 
-        if donnée in ["*ID Système", "ID Discord", "Age", "Grade", "Peut quitter pays", "Ancienneté",
-                      "Dernière connexion"]:
-            valeur = int(valeur)
-        if valeur in ["None", "none"]:
-            valeur = None
-        if donnée == "Age":
-            valeur2 = (date.today().year - valeur) if valeur != "-1" else -1
+        if utils.database(self, "country", "discord_id", user.id) is None:
+            if utils.database(self, "diplomacy", "discord_id", user.id) is None:
+                await ctx.respond("Utilisateur absent de la base de données.")
+                return
+            if utils.database_parametres(setting, "IsInDiplomacyDB") is False:
+                await ctx.respond("Ce paramètre n'est pas disponible pour les utilisateurs de la base de donnée diplomatique")
+                return
+            table = "diplomacy"
+        else:
+            table = "country"
 
-        if de == "Pays":
-            cur = self.bot.countrydb.cursor()
-            cur.execute("SELECT * FROM recrutement WHERE id_discord=?", [user.id])
+        if value in ["None", "Null", "none", "null", ""]:
+            value = None
+        value = utils.database_parametres(setting, "NeedFormat", value)
+
+        cur = self.bot.players.cursor()
+        data = utils.database(self, table, "discord_id", user.id)
+        cur.execute(f"UPDATE {table} SET ?=? WHERE id_discord=?", [setting, value, user.id])
+        self.bot.players.commit()
+        cur.close()
+
+        # rename en cas de changement de pseudo
+        if setting == "ingame_name":
+            headers = {
+                'Accept': 'application/json',
+                'Authorization': f'Bearer {os.environ.get("NATIONSGLORY_API_KEY")}',
+            }
+            response = requests.get(f'https://publicapi.nationsglory.fr/user/{value}', headers=headers)
+
+            if response.status_code != 200:
+                await ctx.respond(
+                    f"Le nouveau nom d'utilisateur a bien été enregistrer. Cependant, une erreur a été rencomptré lors de la liaison avec l'API NationsGlory. Rename de l'utilisateur impossible. *code erreur: E-N-01*")
+                return
+
+            if "error" in response.json():
+                try:
+                    if table == "diplomacy":
+                        await user.edit(nick=f"{value}")
+                    else:
+                        if len(f"Recrue | {value}") <= 32 and data['grade'] == 0:
+                            await user.edit(nick=f"Recrue | {value}")
+
+                        else:
+                            await user.edit(nick=f"{value}")
+                except discord.errors.Forbidden:
+                    await ctx.respond(
+                        f"La donnée {setting} du joueur {user.mention} a bien été définit sur ``{value}``. Cependant, une erreur a été rencomptré lors du rename. *code erreur: E-D-01*")
+                    return
+
+            else:
+                ICI on rename normal
+                user_grade = \
+                    cur.execute("SELECT grade FROM recrutement WHERE pseudo_ingame =?", [valeur]).fetchone()[0]
+                grade_list = ["Candidat", "Recrue", "Recrue+", "Membre", "Membre+", "Officier", "Gouverneur"]
+                user_grade = grade_list[user_grade]
+                try:
+                    if len(f"{user_grade} | {valeur}") <= 32:
+                        await user.edit(nick=f"{user_grade} | {valeur}")
+                    else:
+                        await user.edit(nick=f"{valeur}")
+                except discord.errors.Forbidden:
+                    self.bot.worlddb.commit()
+                    cur.close()
+                    await ctx.respond(
+                        f"La donnée {donnée} du joueur {user.mention} a bien été définit sur ``{valeur}``. **Impossible cependant pour le bot de le rename.**")
+                    return
+
+
             temp = cur.fetchone()
             if temp is None:
                 await ctx.respond("Utilisateur absent de la base de données de pays")
@@ -121,42 +159,7 @@ class Debug(commands.Cog):
                 cur.execute(f"UPDATE recrutement SET id_discord=? WHERE id_discord=?", [valeur, user.id])
             if donnée == "*Pseudo IG":
                 cur.execute(f"UPDATE recrutement SET pseudo_ingame=? WHERE id_discord=?", [valeur, user.id])
-                headers = {
-                    'Accept': 'application/json',
-                    'Authorization': f'Bearer {config["api_key"]}',
-                }
-                response = requests.get(f'https://publicapi.nationsglory.fr/user/{valeur}', headers=headers)
 
-                if response.status_code != 200:
-                    await ctx.respond(
-                        f"Nous avons rencontrer une erreur technique, nous somme navré du désagrément, tu veut bien re essayer s'il te plait ?")
-                    return
-
-                if "error" in response.json():
-                    try:
-                        await user.edit(nick=f"{valeur}")
-                    except discord.errors.Forbidden:
-                        self.bot.worlddb.commit()
-                        cur.close()
-                        await ctx.respond(
-                            f"La donnée {donnée} du joueur {user.mention} a bien été définit sur ``{valeur}``. **Impossible cependant pour le bot de le rename.**")
-                        return
-                else:
-                    user_grade = \
-                        cur.execute("SELECT grade FROM recrutement WHERE pseudo_ingame =?", [valeur]).fetchone()[0]
-                    grade_list = ["Candidat", "Recrue", "Recrue+", "Membre", "Membre+", "Officier", "Gouverneur"]
-                    user_grade = grade_list[user_grade]
-                    try:
-                        if len(f"{user_grade} | {valeur}") <= 32:
-                            await user.edit(nick=f"{user_grade} | {valeur}")
-                        else:
-                            await user.edit(nick=f"{valeur}")
-                    except discord.errors.Forbidden:
-                        self.bot.worlddb.commit()
-                        cur.close()
-                        await ctx.respond(
-                            f"La donnée {donnée} du joueur {user.mention} a bien été définit sur ``{valeur}``. **Impossible cependant pour le bot de le rename.**")
-                        return
 
             if donnée == "Age":
                 cur.execute(f"UPDATE recrutement SET annee_naissance=? WHERE id_discord=?", [valeur2, user.id])

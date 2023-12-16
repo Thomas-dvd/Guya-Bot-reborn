@@ -15,6 +15,18 @@ Red     -> Management
 Green   -> Promotment
 
 # Informations sur la base de données
-- Différence recruitement_date/age_badge: recruitement_date est la date de recrutement précise, seniority indique le
+- Différence recruitement_date/age_badge: recruitement_date est la date de recrutement précise, age_badge indique le
 niveau d'évolution dans le pays suivant des paliers d'anciennetés dans le pays (qui correspondent au néccessaire pour
 rank-up)
+- country stock aussi les personnes autorisés a être out du Guyana
+
+# Erreurs possibles
+Le "E" correspond juste à "erreur"
+Le "N" correspond à une erreur de l'API NG
+Le "B" correspond à une erreur de la base de donnée
+Le "D" correspond à une erreur de discord
+
+E-N-01: Erreur majeur de l'API NationsGlory, causes inconnus
+E-N-02: Erreur de l'API NationsGlory, probablement du a un pseudo contenant des carractères non adaptés ou a une surcharge de requêtes
+E-N-03: Aucun joueur reconnu par l'API NationsGlory n'existe sous ce pseudo
+E-D-01: Le bot n'a pas pu rename la personne, très certainement du au faite que la personne possède un grade supérieur a celui du bot

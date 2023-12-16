@@ -51,19 +51,29 @@ class Recruitement(commands.Cog):
             await ctx.respond(f"{user.mention} est déjà dans la base de données diplomatique.")
             cur.close()
             return
+        temp = cur.execute("SELECT * FROM diplomacy WHERE ingame_name=?", [data["ingame_name"]]).fetchone()
+        if temp is not None:
+            await ctx.respond(f"{user.mention} est déjà dans la base de données diplomatique.")
+            cur.close()
+            return
         temp = cur.execute("SELECT * FROM country WHERE discord_id=?", [data["discord_id"]]).fetchone()
         if temp is not None:
             await ctx.respond(f"{user.mention} est déjà dans la base de données de pays.")
             cur.close()
             return
+        temp = cur.execute("SELECT * FROM country WHERE ingame_name=?", [data["ingame_name"]]).fetchone()
+        if temp is not None:
+            await ctx.respond(f"{user.mention} est déjà dans la base de données de pays.")
+            cur.close()
+            return
 
-        cur.execute("INSERT INTO recrutement (discord_id, ingame_name, recruitment_date, grade) VALUES (:discord_id, "
+        cur.execute("INSERT INTO country (discord_id, ingame_name, recruitment_date, grade) VALUES (:discord_id, "
                     ":ingame_name, :recruitment_date, :grade)", data)
         self.bot.players.commit()
         cur.close()
 
-        if len(f"Recrue | {data['pseudo_ingame']}") <= 32:
-            await user.edit(nick=f"Recrue | {data['pseudo_ingame']}")
+        if len(f"Recrue | {data['ingame_name']}") <= 32:
+            await user.edit(nick=f"Recrue | {data['ingame_name']}")
 
         await user.add_roles(ctx.guild.get_role(config["grades"]["nouvelle_recrue"]))
         text = f"<@&{config['grades']['nouvelle_recrue']}>"
@@ -97,7 +107,7 @@ class Recruitement(commands.Cog):
     # Command /create diplomate
     @create.command(name="diplomate", description="Enregistrer un nouveau diplomate.", default_permission=False)
     @commands.has_any_role(config["grades"]["officier"])
-    async def create_diplomate(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=True), pseudo: Option(str, "pseudo IG.", required=True), relation: Option(str, "Niveau de relation.", choices=["Neutre", "Allié", "Colonie", "Alliance", "Ami", "Confiance"], required=False, default="Neutre"), médaille: Option(str, "Grades médailles.", choices=["Guide", "Modo", "OP (SuperModo/Admin)"], required=False)):
+    async def create_diplomate(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=True), pseudo: Option(str, "pseudo IG.", required=True), relation: Option(str, "Niveau de relation.", choices=["Neutre", "Allié", "Colonie", "Alliance", "Ami", "Confiance"], required=False, default="Neutre"), medal: Option(str, "Grades médailles.", choices=["Guide", "Modo", "OP (SuperModo/Admin)"], required=False, name="médailles")):
 
         data = {
             "discord_id": user.id,
@@ -112,7 +122,17 @@ class Recruitement(commands.Cog):
             await ctx.respond(f"{user.mention} est déjà dans la base de données diplomatique.")
             cur.close()
             return
+        temp = cur.execute("SELECT * FROM diplomacy WHERE ingame_name=?", [data["ingame_name"]]).fetchone()
+        if temp is not None:
+            await ctx.respond(f"{user.mention} est déjà dans la base de données diplomatique.")
+            cur.close()
+            return
         temp = cur.execute("SELECT * FROM country WHERE discord_id=?", [data["discord_id"]]).fetchone()
+        if temp is not None:
+            await ctx.respond(f"{user.mention} est déjà dans la base de données de pays.")
+            cur.close()
+            return
+        temp = cur.execute("SELECT * FROM country WHERE ingame_name=?", [data["ingame_name"]]).fetchone()
         if temp is not None:
             await ctx.respond(f"{user.mention} est déjà dans la base de données de pays.")
             cur.close()
@@ -122,18 +142,19 @@ class Recruitement(commands.Cog):
         text = ""
         headers = {
             'Accept': 'application/json',
-            'Authorization': f'Bearer {os.environ.get("TOKEN")}',
+            'Authorization': f'Bearer {os.environ.get("NATIONSGLORY_API_KEY")}',
         }
-        response = requests.get(f'https://publicapi.nationsglory.fr/user/{data["pseudo_ingame"]}',
+        response = requests.get(f'https://publicapi.nationsglory.fr/user/{data["ingame_name"]}',
                                 headers=headers)
+        print(response.json())
         if response.status_code != 200:
-            await ctx.respond("Erreur de l'API NationsGlory.")
+            await ctx.respond("Erreur de l'API NationsGlory. *code erreur: E-N-01*")
             return
         if "error" in response.json():
             if response.json()["error"] == "unknown.user":  # Joueur non détecter
                 api_ok = 1
             else:
-                await ctx.respond("Erreur de l'API NationsGlory.")
+                await ctx.respond("Erreur de l'API NationsGlory. *code erreur: E-N-02*")
                 return
         else:
             await user.add_roles(ctx.guild.get_role(config["grades"]["link"]))
@@ -170,12 +191,12 @@ class Recruitement(commands.Cog):
                 api_data['country'] = "Wilderness"
                 api_data['country_rank'] = ""
 
-            if len(f"{api_data['country']} | {data['pseudo_ingame']} ({api_data['country_rank']})") <= 32:
-                await user.edit(nick=f"{api_data['country']} | {data['pseudo_ingame']} ({api_data['country_rank']})")
-            elif len(f"{api_data['country']} | {data['pseudo_ingame']}") <= 32:
-                await user.edit(nick=f"{api_data['country']} | {data['pseudo_ingame']}")
+            if len(f"{api_data['country']} | {data['ingame_name']} ({api_data['country_rank']})") <= 32:
+                await user.edit(nick=f"{api_data['country']} | {data['ingame_name']} ({api_data['country_rank']})")
+            elif len(f"{api_data['country']} | {data['ingame_name']}") <= 32:
+                await user.edit(nick=f"{api_data['country']} | {data['ingame_name']}")
             else:
-                await user.edit(nick=f"{data['pseudo_ingame']}")
+                await user.edit(nick=f"{data['ingame_name']}")
 
         if relation == "Neutre":
             await user.add_roles(ctx.guild.get_role(config["grades"]["neutre"]))
@@ -221,15 +242,15 @@ class Recruitement(commands.Cog):
             await user.add_roles(ctx.guild.get_role(config["grades"]["colonie"]))
             text += f", <@&{config['grades']['colonie']}>"
 
-        if médaille == "Guide":
+        if medal == "Guide":
             await user.add_roles(ctx.guild.get_role(config["grades"]["guide"]))
             text += f", <@&{config['grades']['guide']}>"
 
-        elif médaille == "Modo":
+        elif medal == "Modo":
             await user.add_roles(ctx.guild.get_role(config["grades"]["modo"]))
             text += f", <@&{config['grades']['modo']}>"
 
-        elif médaille == "OP (SuperModo/Admin)":
+        elif medal == "OP (SuperModo/Admin)":
             await user.add_roles(ctx.guild.get_role(config["grades"]["op_sm_admin"]))
             text += f", <@&{config['grades']['op_sm_admin']}>"
 
@@ -238,7 +259,7 @@ class Recruitement(commands.Cog):
         if api_ok == 0:
             await ctx.respond(f"{user.mention} a bien été enregistré.")
         else:
-            await ctx.respond(f"{user.mention} a bien été enregistré. **Pseudo non reconnu par NationsGlory.**")
+            await ctx.respond(f"{user.mention} a bien été enregistré. **Impossible de trouver un joueur NG avec ce nom.** *code erreur: E-N-03*")
 
     # Command /create non-joueur
     @create.command(name="non-joueur", description="Enregistrer une personne ne jouant pas a NationsGlory.", default_permission=False)
@@ -302,7 +323,7 @@ class Recruitement(commands.Cog):
         else:
             table = "country"
 
-        data = utils.database(self, "country", "ingame_name", pseudo)
+        data = utils.database(self, table, "ingame_name", pseudo)
 
         user = ctx.guild.get_member(data["discord_id"])
         cur = self.bot.players.cursor()
