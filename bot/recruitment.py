@@ -16,11 +16,11 @@ with open("config.json", encoding="utf-8") as f:
 
 
 def setup(bot):
-    print('Loading cog recruitement')
-    bot.add_cog(Recruitement(bot))
+    print('Loading cog recruitment')
+    bot.add_cog(Recruitment(bot))
 
 
-class Recruitement(commands.Cog):
+class Recruitment(commands.Cog):
     def __init__(self, bot: GuyaBot):
         self.bot = bot
 
