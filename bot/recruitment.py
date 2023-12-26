@@ -263,7 +263,7 @@ class Recruitment(commands.Cog):
 
     # Command /create non-joueur
     @create.command(name="non-joueur", description="Enregistrer une personne ne jouant pas a NationsGlory.", default_permission=False)
-    @commands.has_any_role(config["grades"]["recruteur"])
+    @commands.has_any_role(config["grades"]["officier"])
     async def create_non_joueur(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=True), relation: Option(str, "Niveau de relation.", choices=["Neutre", "Allié", "Ami", "Confiance"], required=False, default="Neutre")):
 
         await ctx.defer()
@@ -301,7 +301,7 @@ class Recruitment(commands.Cog):
             await user.add_roles(ctx.guild.get_role(config["grades"]["confiance"]))
             text += f", <@&{config['grades']['confiance']}>"
 
-        for role in config["grade"]["deco"]["global"]:
+        for role in config["grades"]["deco"]["global"]:
             await user.add_roles(ctx.guild.get_role(role))
             text += f", <@&{role}>"
 

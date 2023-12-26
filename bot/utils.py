@@ -50,6 +50,8 @@ def database(self, table, field, value):
             "discord_id": temp[1],
             "ingame_name": temp[2]
         }
+
+    cur.close()
     return data
 
 
@@ -95,3 +97,5 @@ def database_parametres(setting=None, question=None, value=None):
             if value is None:
                 return 0
             return int(value)
+        else:
+            return value

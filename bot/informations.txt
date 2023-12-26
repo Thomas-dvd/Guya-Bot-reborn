@@ -1,24 +1,55 @@
+================================================
+========================# COMMANDS==============
+================================================
+
+# /create recrue: Permissions requises: Recruteur
+Commande pour enregistrer une nouvelle personne dans la base de donnée comme nouvelle recrue. Lui donne automatiquement les grades liés et rename.
+Paramètres: user -> Utilisateur discord. pseudo -> Pseudo nationglory associer.
+
+# /create diplomate: Permissions requises: Officier
+Commande pour enregistrer une nouvelle personne dans la base de donnée comme diplomate. Lui donne automatiquement les grades liés (cf. paramètres) et rename 
+Paramètres suplémentaires: user -> Utilisateur discord. pseudo -> Pseudo nationglory associer. relation -> Niveau de confiance, de neutre jusqu'a Confiance. médaille -> Pour les grades RP et Staff
+
+# /create non-joueur: Permissions requises: Officier
+Commande pour enregistrer une nouvelle personne dans la base de donnée comme diplomate. Lui donne automatiquement les grades liés (cf. paramètres) et rename
+Paramètres suplémentaires: user -> Utilisateur discord. relation -> Niveau de confiance, de neutre jusqu'a Confiance.
+
+=> Face a un joueur qui a déjà des grades, si vous souhaitez le remettre a 0 pour lui redonner des grades, le plus simple est de l'inscrire dans la base de donnée diplomatique puis de le supprimer, ainsi, il aura tout les grades de base
+
+========================
+
 # Les grades de la bdd
 Valeur -> Nom classique -> Nom cours
 0 -> Nouvelle recrue -> Recrue
 1 -> Recrue confirmé -> Recrue+
 2 -> Membre          -> Membre
 3 -> Membre confirmé -> Membre+
-4 -> Officier        -> Offi
-5 -> Gouverneur      -> Gouv
-6 -> Second          -> Second
-  -> Leader          -> Leader (pas de distinction Leader/Second par le bot)
+4 -> Officier        -> Offi.
+5 -> Gouverneur      -> Gouv.
+6 -> Second          -> Sec.
+  -> Leader          -> Lead. (pas de distinction Leader/Second par le bot)
+
 
 # Les couleurs des embeds
 Gold    -> Recruitment
 Red     -> Management
-Green   -> Promotment
+Green   -> Progressment
+
 
 # Informations sur la base de données
 - Différence recruitment_date/age_badge: recruitment_date est la date de recrutement précise, age_badge indique le
 niveau d'évolution dans le pays suivant des paliers d'anciennetés dans le pays (qui correspondent au néccessaire pour
 rank-up)
-- country stock aussi les personnes autorisés a être out du Guyana
+- Country stock aussi les personnes autorisés a être out du Guyana "bypass"
+
+
+# Niveau de détection des absences
+Recrue      -> 3 jours
+Recrue+     -> 5 jours
+Membre      -> 7 jours
+Membre+     -> 14 jours
+Officier    -> 31 jours
+
 
 # Erreurs possibles
 Le "E" correspond juste à "erreur"
