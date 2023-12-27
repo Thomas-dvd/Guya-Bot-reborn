@@ -1,7 +1,7 @@
 import json
 
 import discord
-from discord import Option
+from discord import Option, Color
 from discord.ext import commands
 
 import utils
@@ -23,9 +23,6 @@ class Progressment(commands.Cog):
     # ------------------------------------------------------------------------------------------
     #                                         Commands
     # ------------------------------------------------------------------------------------------
-
-    # groupe progressment
-    progressment = discord.SlashCommandGroup("progressment", "progressment related commands")
 
     # groupe elo
     elo = discord.SlashCommandGroup("elo", "elo related commands")
@@ -143,6 +140,50 @@ class Progressment(commands.Cog):
         await ctx.respond(f"Unrank de {user.mention} effectué avec succès.")
 
     # Command /player-info
+    @commands.slash_command(name="player-info", description="Permet de rank-up une personne.", default_permission=True)
+    @commands.has_any_role(config["grades"]["officier"])
+    async def player_info(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=False)):
+
+        if user is None:
+            user = ctx.user
+
+        data = utils.database(self, "country", "discord_id", user.id)
+        if data is None:
+            await ctx.respond("Utilisateur absent de la base de données de pays.")
+            return
+        embed = utils.create_embed(self.bot, title=f"Informations de {user.name}:", description=f"Voici toute les informations relatives à {user.name}.", color=Color.green())
+
+        embed.add_field(name=f"Pseudo InGame:", value=f"{data['ingame_name']}")
+        embed.add_field(name=f"Date de recrutement:", value=f"{data['recruitment_date']}")
+        embed.add_field(name=f"ID système", value=f"{data['id']}")
+        if data['country'] == "bypass":
+            country_permission = f"<{config['emoji_yes']}>"
+        else:
+            country_permission = f"<{config['emoji_no']}>"
+        if data['absence'] is not None:
+            absence_permission = f"<{config['emoji_yes']}>"
+        else:
+            absence_permission = f"<{config['emoji_no']}>"
+        embed.add_field(name=f"Permissions:", value=f"Sortie de territoire: {country_permission}\nAbsence: {absence_permission}")
+
+        badges = utils.database_parametres(question="BadgesListe")
+        text = ""
+        for badge in badges:
+            if data[badge[0]] != 0:
+                if data[badge[0]] != badge[2]:
+                    text += f"<{config[f'emoji_level_{data[badge[0]]}']}> {badge[1]} niveau {data[badge[0]]}\n"
+                else:
+                    text += f"<{config[f'emoji_level_5']}> {badge[1]} niveau max\n"
+        if text == "":
+            text = "*Il n'y a pas grand chose a afficher ici...*"
+        embed.add_field(name=f"Badges:", value=f"{text}", inline=False)
+        await ctx.respond(embed=embed)
+
+
+
+
+
+    # Command /badges
     pass
 
     # Command /elo stats
@@ -151,8 +192,11 @@ class Progressment(commands.Cog):
     # Command /elo informations
     pass
 
-    # Command /progressment badges
+    # Command /elo management
     pass
 
-    # Command /progressment elo
-    pass
+    # ------------------------------------------------------------------------------------------
+    #                                         Player-info buttons
+    # ------------------------------------------------------------------------------------------
+
+# Rajouter un bouton information badges + rank-up

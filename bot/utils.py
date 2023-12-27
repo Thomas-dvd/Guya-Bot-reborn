@@ -24,7 +24,7 @@ def database(self, table, field, value):
     if temp is None:
         return None
 
-    # Si on change cette data (relatif a la BDD, il ne faut pas oublier la fonction database_parametres ci dessous pour le /edit)
+    # Si on change cette data (relatif a la BDD), il ne faut pas oublier la fonction database_parametres ci dessous pour le /edit (indique le type de paramètre) et aussi la liste des badges au besoin
     elif table == "country":
         data = {
             "id": temp[0],
@@ -83,9 +83,10 @@ async def default_grades(self, ctx, user):
 
 # database paramètres (for /edit)
 def database_parametres(setting=None, question=None, value=None):
-    if setting is None:
+    if question == "EditParametres":
         return ["id", "discord_id", "ingame_name", "recruitment_date", "grade", "country", "last_connection", "absence",
-                "age_badge", "speaker_badge", "dc_badge", "schemalink_badge", "soldat_badge", "recruiter_badge", "animator_badge", "money_badge"]
+                "age_badge", "speaker_badge", "dc_badge", "schemalink_badge", "soldat_badge", "recruiter_badge",
+                "animator_badge", "money_badge"]
 
     if question == "IsInDiplomacyDB":
         if setting in ["id", "discord_id", "ingame_name"]:
@@ -93,9 +94,22 @@ def database_parametres(setting=None, question=None, value=None):
         return False
 
     if question == "NeedFormat":
-        if setting in ["id", "discord_id", "grade", "last_connection", "age_badge", "speaker_badge", "dc_badge", "schemalink_badge", "soldat_badge", "recruiter_badge", "animator_badge"]:
+        if setting in ["id", "discord_id", "grade", "last_connection", "age_badge", "speaker_badge", "dc_badge",
+                       "schemalink_badge", "soldat_badge", "recruiter_badge", "animator_badge"]:
             if value is None:
                 return 0
             return int(value)
         else:
             return value
+
+    if question == "BadgesListe":
+        return [
+            ["age_badge", "Badge d'anciennté", 3],
+            ["speaker_badge", "Badge de discussion", 5],
+            ["dc_badge", "Badge des doubles comptes", 3],
+            ["schemalink_badge", "Badge de liaison des schématiques", 1],
+            ["soldat_badge", "Badge du Soldat", 1],
+            ["recruiter_badge", "Badge du recruteur", 1],
+            ["animator_badge", "Badge d'animateur", 1],
+            ["money_badge", "Badge de donation", 1]
+        ]

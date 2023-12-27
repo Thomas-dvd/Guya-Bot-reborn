@@ -75,7 +75,7 @@ class Management(commands.Cog):
     # Command /edit
     @commands.slash_command(name="édit", description="Donne toute les informations d'une personne.", default_permission=False)
     @commands.has_any_role(config["grades"]["gouverneur"])
-    async def edit(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=True), setting: Option(str, "paramètre a modifier", choices=utils.database_parametres(), name="paramètre", required=True), value: Option(str, "nouvelle valeur", required=True, default=None, name="valeur")):
+    async def edit(self, ctx: discord.ApplicationContext, user: Option(discord.User, "Entre un utilisateur.", required=True), setting: Option(str, "paramètre a modifier", choices=utils.database_parametres(question="EditParametres"), name="paramètre", required=True), value: Option(str, "nouvelle valeur", required=True, default=None, name="valeur")):
 
         if utils.database(self, "country", "discord_id", user.id) is None:
             if utils.database(self, "diplomacy", "discord_id", user.id) is None:
