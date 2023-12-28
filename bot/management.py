@@ -534,6 +534,9 @@ class Management(commands.Cog):
         cur.close()
         await ctx.respond(f"{user.mention} dispose maintenant d'une autorisation de sortie du territoire.")
 
+    # TODO: Command /badges
+    pass
+
     # ------------------------------------------------------------------------------------------
     #                                   Loops check
     # ------------------------------------------------------------------------------------------
@@ -695,12 +698,16 @@ class Management(commands.Cog):
                 pass
 
         # Ancienneté
-        if date.today() - date.fromisoformat(data["recruitment_date"]) == timedelta(days=14) and data["age_badge"] == 0:
+        if date.today() - date.fromisoformat(data["recruitment_date"]) >= timedelta(days=5) and data["age_badge"] != 1:
             cur.execute("UPDATE country SET age_badge=1 WHERE discord_id=?", [data["discord_id"]])
-        if date.today() - date.fromisoformat(data["recruitment_date"]) == timedelta(days=30) and data["age_badge"] == 1:
+        if date.today() - date.fromisoformat(data["recruitment_date"]) >= timedelta(days=14) and data["age_badge"] != 2:
             cur.execute("UPDATE country SET age_badge=2 WHERE discord_id=?", [data["discord_id"]])
-        if date.today() - date.fromisoformat(data["recruitment_date"]) == timedelta(days=90) and data["age_badge"] == 2:
+        if date.today() - date.fromisoformat(data["recruitment_date"]) >= timedelta(days=30) and data["age_badge"] != 3:
             cur.execute("UPDATE country SET age_badge=3 WHERE discord_id=?", [data["discord_id"]])
+        if date.today() - date.fromisoformat(data["recruitment_date"]) >= timedelta(days=90) and data["age_badge"] != 4:
+            cur.execute("UPDATE country SET age_badge=4 WHERE discord_id=?", [data["discord_id"]])
+        if date.today() - date.fromisoformat(data["recruitment_date"]) >= timedelta(days=365) and data["age_badge"] != 5:
+            cur.execute("UPDATE country SET age_badge=5 WHERE discord_id=?", [data["discord_id"]])
 
         self.bot.players.commit()
         cur.close()

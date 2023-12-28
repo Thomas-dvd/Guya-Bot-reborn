@@ -108,8 +108,8 @@ def database_parametres(setting=None, question=None, value=None):
             ["speaker_badge", "Badge de discussion", 5],
             ["dc_badge", "Badge des doubles comptes", 3],
             ["schemalink_badge", "Badge de liaison des schématiques", 1],
-            ["soldat_badge", "Badge du Soldat", 1],
-            ["recruiter_badge", "Badge du recruteur", 1],
-            ["animator_badge", "Badge d'animateur", 1],
-            ["money_badge", "Badge de donation", 1]
+            ["soldat_badge", "Badge du Soldat", 5],
+            ["recruiter_badge", "Badge du recruteur", 5],
+            ["animator_badge", "Badge d'animateur", 5],
+            ["money_badge", "Badge de donation", 5]
         ]
