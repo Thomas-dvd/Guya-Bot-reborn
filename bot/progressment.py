@@ -52,23 +52,24 @@ class Progressment(commands.Cog):
 
         if data["grade"] == 0:
             await user.add_roles(guild.get_role(config["grades"]["recrue_confirme"]))
-            msg = await channel_gg.send(f"Félicitaion à {user.mention} qui passe Recrue confirmé. 🎉")
+            msg = await channel_gg.send(f"Félicitation à {user.mention} qui passe Recrue confirmé. 🎉")
             grade = "Recrue+"
         elif data["grade"] == 1:
             await user.add_roles(guild.get_role(config["grades"]["membre"]))
-            msg = await channel_gg.send(f"Félicitaion à {user.mention} qui passe Membre. 🎉")
+            msg = await channel_gg.send(f"Félicitation à {user.mention} qui passe Membre. 🎉")
             grade = "Membre"
         elif data["grade"] == 2:
             await user.add_roles(guild.get_role(config["grades"]["membre_confirme"]))
-            msg = await channel_gg.send(f"Félicitaion à {user.mention} qui passe Membre confirmé. 🎉")
+            msg = await channel_gg.send(f"Félicitation à {user.mention} qui passe Membre confirmé. 🎉")
             grade = "Membre+"
         elif data["grade"] == 3:
             await user.add_roles(guild.get_role(config["grades"]["officier"]))
-            msg = await channel_gg.send(f"Félicitaion à {user.mention} qui passe Officier. 🎉")
+            await user.add_roles(guild.get_role(config["grades"]["deco"]["hauts_grader"]))
+            msg = await channel_gg.send(f"Félicitation à {user.mention} qui passe Officier. 🎉")
             grade = "Offi."
         elif data["grade"] == 4:
             await user.add_roles(guild.get_role(config["grades"]["gouverneur"]))
-            msg = await channel_gg.send(f"Félicitaion à {user.mention} qui passe Gouverneur. 🎉")
+            msg = await channel_gg.send(f"Félicitation à {user.mention} qui passe Gouverneur. 🎉")
             grade = "Gouv."
         else:
             await ctx.respond(f"Impossible de rank-up {user.mention}. *code erreur: E-B-01*")

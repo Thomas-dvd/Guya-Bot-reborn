@@ -789,5 +789,6 @@ class Management(commands.Cog):
             for discord_id in api_error:
                 text += f" <@{discord_id}>"
             text += "."
+        api_error = len(api_error)
         await data_log.send(
             f"Check de la db diplomatique terminé ! Sur un total de ``{data_number}`` personnes, ``{unrecognized}`` n'ont pas été reconnue (``{(unrecognized / data_number) * 100}%``). ``{delete}`` personnes ont quitter le discord et ont donc été supprimer de la db diplomatique. Le bot a rencontré ``{api_error}`` erreurs d'API{text}")
