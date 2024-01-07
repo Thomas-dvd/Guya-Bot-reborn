@@ -648,7 +648,7 @@ class Management(commands.Cog):
             elif api_data["country"] == "Venezuela":
                 await user.add_roles(guild.get_role(config["grades"]["pays"]["venezuela"]))
 
-        if (not api_data["country"] in ["Guyana", "Venezuela"]) and (data["country"] != "bypass"):
+        if (not api_data["country"] in ["Guyana", "Venezuela", "Guatemala"]) and (data["country"] != "bypass"):
             await data_bot.send(
                 f"L'utilisateur {data['ingame_name']} ({user.mention}) n'est plus dans l'un des pays GDE et ne dispose d'aucune autorisation a cette effet.")
 
